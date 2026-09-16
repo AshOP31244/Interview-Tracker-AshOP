@@ -1,0 +1,2962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f4f4f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1114" media="(prefers-color-scheme: dark)">
+<meta name="description" content="A local-only tracker for job opportunities and the interview rounds inside them.">
+<title>Interview Tracker-AshOP</title>
+<style>
+  :root {
+    --bg: #f4f4f6;
+    --surface: #ffffff;
+    --sunken: #edeef1;
+    --text: #15171c;
+    --soft: #474d58;
+    --muted: #6d7380;
+    --border: #e2e3e8;
+    --border-strong: #c6c8d0;
+    --accent: #15171c;
+    --accent-fg: #ffffff;
+    --link: #1f4ed8;
+    --danger: #b42318;
+    --danger-soft: #fdf1f0;
+    --focus: #8a8f9a;
+
+    --ok: #1a7f52;
+    --ok-bg: #e9f7f0;
+    --warn: #9a6400;
+    --warn-bg: #fdf4e3;
+    --info: #2f4bb8;
+    --info-bg: #eceffc;
+    --stop: #a3211a;
+    --stop-bg: #fdeeed;
+    --idle: #5d636e;
+    --idle-bg: #eef0f3;
+
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+    --shadow: 0 1px 2px rgba(16, 18, 24, 0.05);
+    --shadow-lift: 0 6px 24px rgba(16, 18, 24, 0.16);
+    --wrap: 1120px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1114;
+      --surface: #181a1f;
+      --sunken: #212429;
+      --text: #e8eaee;
+      --soft: #b8bdc7;
+      --muted: #939aa5;
+      --border: #272a31;
+      --border-strong: #3a3f48;
+      --accent: #e8eaee;
+      --accent-fg: #15171c;
+      --link: #8fabff;
+      --danger: #f08b82;
+      --danger-soft: #2a1a19;
+      --focus: #6b7280;
+
+      --ok: #6fd3a3;        --ok-bg: #12291f;
+      --warn: #e5bc74;      --warn-bg: #2a2314;
+      --info: #a7b6f5;      --info-bg: #1c2036;
+      --stop: #f0a49d;      --stop-bg: #2c1717;
+      --idle: #a8aeb9;      --idle-bg: #23262c;
+
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+      --shadow-lift: 0 10px 34px rgba(0, 0, 0, 0.55);
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+
+  html { -webkit-text-size-adjust: 100%; background: var(--bg); }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+  }
+  body.locked { overflow: hidden; }
+
+  button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+  button { -webkit-tap-highlight-color: transparent; }
+  a { color: var(--link); }
+
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  }
+
+  .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 16px; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+
+  /* ============ App bar ============ */
+
+  .appbar {
+    position: sticky; top: 0; z-index: 30;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding-top: env(safe-area-inset-top);
+  }
+  .appbar-inner {
+    display: flex; align-items: center; gap: 12px;
+    min-height: 58px;
+  }
+  .brand {
+    font-size: 15px; font-weight: 640; letter-spacing: -0.01em;
+    white-space: nowrap; margin-right: auto;
+  }
+  .brand span { color: var(--muted); font-weight: 450; }
+
+  .viewnav {
+    display: flex; gap: 2px; padding: 3px;
+    background: var(--sunken); border-radius: 10px;
+  }
+  .viewnav button {
+    min-height: 38px; padding: 0 16px;
+    border: none; background: transparent; color: var(--muted);
+    font-size: 14px; font-weight: 550; border-radius: 8px; cursor: pointer;
+  }
+  .viewnav button[aria-current="page"] {
+    background: var(--surface); color: var(--text); box-shadow: var(--shadow);
+  }
+
+  .appbar-actions { display: flex; gap: 6px; }
+
+  .btn-quiet {
+    min-height: 40px; padding: 0 12px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--soft);
+    font-size: 13.5px; font-weight: 520; border-radius: var(--r-sm); cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-quiet:hover { border-color: var(--border-strong); }
+  .btn-quiet:active { background: var(--sunken); }
+
+  @media (max-width: 720px) {
+    .appbar-inner { flex-wrap: wrap; min-height: 0; padding-top: 10px; padding-bottom: 10px; gap: 10px; }
+    .brand { font-size: 16px; }
+    .viewnav { order: 3; width: 100%; }
+    .viewnav button { flex: 1 1 0; }
+  }
+
+  .banner {
+    margin: 14px 0 0;
+    background: var(--warn-bg); border: 1px solid var(--border);
+    color: var(--warn); border-radius: var(--r-md);
+    padding: 11px 13px; font-size: 13.5px; line-height: 1.45;
+  }
+
+  /* ============ Generic panel ============ */
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow);
+  }
+
+  .section-title {
+    font-size: 11.5px; font-weight: 640; letter-spacing: 0.04em;
+    color: var(--muted); margin: 0 0 10px;
+  }
+
+  main { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  .view { padding-top: 18px; }
+
+  /* ============ Calendar ============ */
+
+  .cal-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  @media (min-width: 940px) {
+    .cal-layout { grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr); align-items: start; }
+    .cal-side { position: sticky; top: 90px; }
+  }
+
+  .cal-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 14px 14px 12px;
+  }
+  .cal-month {
+    font-size: 17px; font-weight: 640; letter-spacing: -0.015em;
+    margin: 0 auto 0 0;
+  }
+  .cal-nav { display: flex; gap: 6px; align-items: center; }
+  .icon-btn {
+    width: 40px; height: 40px; flex: 0 0 auto;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border); background: var(--surface); color: var(--soft);
+    border-radius: var(--r-sm); cursor: pointer; font-size: 15px; line-height: 1;
+  }
+  .icon-btn:hover { border-color: var(--border-strong); }
+  .icon-btn:active { background: var(--sunken); }
+
+  .cal-weekdays {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    padding: 0 10px 6px; gap: 2px;
+  }
+  .cal-weekdays span {
+    text-align: center; font-size: 11.5px; font-weight: 600;
+    color: var(--muted);
+  }
+
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+    padding: 0 10px 12px;
+  }
+
+  .cal-day {
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    min-height: 56px; padding: 7px 2px 6px;
+    border: 1px solid transparent; border-radius: var(--r-sm);
+    background: transparent; cursor: pointer;
+    font-variant-numeric: tabular-nums;
+  }
+  .cal-day:hover { background: var(--sunken); }
+  .cal-day .num { font-size: 14px; font-weight: 500; line-height: 1.1; }
+  .cal-day.muted .num { color: var(--muted); opacity: 0.55; }
+  .cal-day.today .num {
+    background: var(--accent); color: var(--accent-fg);
+    width: 26px; height: 26px; border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 620;
+  }
+  .cal-day[aria-selected="true"] {
+    border-color: var(--border-strong); background: var(--sunken);
+  }
+  .cal-day:disabled { cursor: default; }
+
+  .dots { display: flex; gap: 3px; align-items: center; min-height: 6px; }
+  .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--muted); }
+  .dot.scheduled { background: var(--info); }
+  .dot.completed { background: var(--ok); }
+  .dot.cancelled { background: var(--idle); opacity: 0.55; }
+  .dot.rescheduled { background: var(--warn); }
+  .dot.noshow { background: var(--stop); }
+  .dots .more { font-size: 10px; color: var(--muted); line-height: 1; }
+
+  .cal-legend {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    padding: 0 14px 14px; font-size: 12px; color: var(--muted);
+  }
+  .cal-legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+  @media (min-width: 940px) {
+    .cal-day { min-height: 76px; justify-content: flex-start; }
+  }
+
+  /* ============ Day / today panels ============ */
+
+  .side-stack { display: grid; gap: 16px; }
+  .panel-pad { padding: 14px; }
+
+  .day-title { font-size: 15.5px; font-weight: 640; margin: 0; letter-spacing: -0.01em; }
+  .day-sub { font-size: 13px; color: var(--muted); margin: 2px 0 0; }
+
+  .event {
+    display: block; width: 100%; text-align: left;
+    background: transparent; border: none; border-top: 1px solid var(--border);
+    padding: 13px 0 12px; cursor: pointer;
+  }
+  .event:first-of-type { border-top: none; padding-top: 12px; }
+  .event:hover .event-party { text-decoration: underline; }
+  .event-time {
+    font-size: 12.5px; font-weight: 620; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .event-party { font-size: 14.5px; font-weight: 600; margin-top: 3px; letter-spacing: -0.01em; }
+  .event-role { font-size: 13px; color: var(--muted); }
+  .event-meta { font-size: 12.5px; color: var(--soft); margin-top: 6px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+  .none { font-size: 13.5px; color: var(--muted); margin: 2px 0 0; }
+
+  /* ============ Badges ============ */
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11.5px; font-weight: 620; letter-spacing: 0.01em;
+    padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+    background: var(--idle-bg); color: var(--idle);
+  }
+  .badge::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+  .badge.plain::before { display: none; }
+  .b-inprogress, .b-scheduled { background: var(--info-bg); color: var(--info); }
+  .b-offer, .b-completed     { background: var(--ok-bg); color: var(--ok); }
+  .b-rejected, .b-noshow     { background: var(--stop-bg); color: var(--stop); }
+  .b-waiting, .b-rescheduled { background: var(--warn-bg); color: var(--warn); }
+  .b-onhold                  { background: var(--warn-bg); color: var(--warn); }
+  .b-withdrawn, .b-closed, .b-cancelled { background: var(--idle-bg); color: var(--idle); }
+
+  /* ============ Opportunities ============ */
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .search {
+    flex: 1 1 240px; min-width: 0; height: 44px; padding: 0 13px;
+    border: 1px solid var(--border); border-radius: var(--r-md);
+    background: var(--surface); color: var(--text);
+  }
+  .search::placeholder { color: var(--muted); }
+  .select {
+    height: 44px; padding: 0 10px; border: 1px solid var(--border);
+    border-radius: var(--r-md); background: var(--surface); color: var(--text);
+    max-width: 100%;
+  }
+
+  .chips {
+    display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+    margin: 0 -16px 14px; padding: 2px 16px;
+  }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: 0 0 auto; min-height: 38px; padding: 0 14px;
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--soft);
+    border-radius: 999px; font-size: 13.5px; font-weight: 520; cursor: pointer; white-space: nowrap;
+  }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+  .chip .n { font-variant-numeric: tabular-nums; opacity: 0.65; font-size: 12.5px; }
+
+  .refine { display: none; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .refine.open { display: flex; }
+  .refine .select { flex: 1 1 160px; height: 40px; }
+
+  .opp-grid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 760px) { .opp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1040px) { .opp-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+  .opp {
+    display: flex; flex-direction: column; text-align: left; width: 100%;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-lg); box-shadow: var(--shadow);
+    padding: 16px; cursor: pointer;
+    transition: border-color 0.14s ease, transform 0.14s ease;
+  }
+  .opp:hover { border-color: var(--border-strong); }
+  .opp:active { transform: translateY(1px); }
+
+  .opp-top { display: flex; align-items: flex-start; gap: 10px; }
+  .opp-vendor {
+    font-size: 16.5px; font-weight: 660; letter-spacing: -0.015em;
+    margin-right: auto; overflow-wrap: anywhere;
+  }
+  .opp-client { font-size: 14px; color: var(--soft); margin-top: 2px; overflow-wrap: anywhere; }
+  .opp-client b { font-weight: 620; color: var(--text); }
+  .opp-role { font-size: 13.5px; color: var(--muted); margin-top: 6px; overflow-wrap: anywhere; }
+
+  .opp-next {
+    margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border);
+  }
+  .opp-next .label { font-size: 11px; font-weight: 640; letter-spacing: 0.05em; color: var(--muted); }
+  .opp-next .round { font-size: 14px; font-weight: 600; margin-top: 4px; }
+  .opp-next .when { font-size: 13px; color: var(--soft); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .opp-next .empty { font-size: 13.5px; color: var(--muted); margin-top: 4px; }
+
+  .opp-foot {
+    margin-top: 14px; display: flex; align-items: center; gap: 10px;
+    font-size: 12.5px; color: var(--muted);
+  }
+  .bar { flex: 1 1 auto; height: 4px; background: var(--sunken); border-radius: 999px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--soft); border-radius: 999px; }
+
+  .empty-state { text-align: center; padding: 64px 20px; }
+  .empty-state strong { display: block; font-size: 17px; font-weight: 620; letter-spacing: -0.015em; }
+  .empty-state p { color: var(--muted); font-size: 14px; margin: 6px 0 0; }
+
+  /* ============ FAB ============ */
+
+  .fab {
+    position: fixed; z-index: 35;
+    right: max(16px, calc(50vw - (var(--wrap) / 2) + 16px));
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    min-height: 54px; padding: 0 22px;
+    border: none; border-radius: 999px;
+    background: var(--accent); color: var(--accent-fg);
+    font-size: 15px; font-weight: 620; cursor: pointer;
+    box-shadow: var(--shadow-lift);
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: transform 0.12s ease;
+  }
+  .fab:active { transform: scale(0.97); }
+
+  /* ============ Ticket screen ============ */
+
+  .screen {
+    position: fixed; inset: 0; z-index: 70;
+    background: var(--bg); overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(40px + env(safe-area-inset-bottom));
+  }
+
+  .ticket-bar {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--bg); border-bottom: 1px solid var(--border);
+    padding-top: env(safe-area-inset-top);
+  }
+  .ticket-bar-inner { display: flex; align-items: center; gap: 8px; min-height: 56px; }
+  .back {
+    display: inline-flex; align-items: center; gap: 7px;
+    min-height: 42px; padding: 0 12px 0 8px; margin-right: auto;
+    border: none; background: transparent; color: var(--soft);
+    font-size: 14.5px; font-weight: 550; border-radius: var(--r-sm); cursor: pointer;
+  }
+  .back:active { background: var(--sunken); }
+
+  .ticket-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); padding-top: 18px; }
+  @media (min-width: 960px) {
+    .ticket-grid { grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr); align-items: start; }
+  }
+  .ticket-col { display: grid; gap: 16px; align-content: start; min-width: 0; }
+
+  .ticket-head { padding: 18px; }
+  .ticket-vendor { font-size: 24px; font-weight: 680; letter-spacing: -0.025em; margin: 0; overflow-wrap: anywhere; }
+  .ticket-client { font-size: 15px; color: var(--soft); margin: 4px 0 0; overflow-wrap: anywhere; }
+  .ticket-client b { color: var(--text); font-weight: 640; }
+  .ticket-role { font-size: 14.5px; color: var(--muted); margin: 8px 0 0; }
+  .ticket-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+  .kv { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 8px 12px; font-size: 14px; }
+  .kv dt { color: var(--muted); font-size: 13px; }
+  .kv dd { margin: 0; overflow-wrap: anywhere; }
+
+  .row-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+  .next-box { padding: 16px; }
+  .next-round { font-size: 17px; font-weight: 640; letter-spacing: -0.015em; }
+  .next-when { font-size: 14.5px; color: var(--soft); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .next-mode { font-size: 13.5px; color: var(--muted); margin-top: 2px; }
+
+  .timeline { list-style: none; margin: 0; padding: 0; }
+  .timeline li { position: relative; padding: 0 0 16px 24px; }
+  .timeline li::before {
+    content: ""; position: absolute; left: 4px; top: 6px;
+    width: 8px; height: 8px; border-radius: 999px;
+    background: var(--border-strong);
+  }
+  .timeline li::after {
+    content: ""; position: absolute; left: 7.5px; top: 18px; bottom: 0;
+    width: 1px; background: var(--border);
+  }
+  .timeline li:last-child { padding-bottom: 0; }
+  .timeline li:last-child::after { display: none; }
+  .timeline .when { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .timeline .what { font-size: 13.5px; margin-top: 1px; }
+
+  .iv {
+    display: block; width: 100%; text-align: left; cursor: pointer;
+    background: transparent; border: none; border-top: 1px solid var(--border);
+    padding: 13px 0;
+  }
+  .iv:first-of-type { border-top: none; padding-top: 4px; }
+  .iv-top { display: flex; align-items: flex-start; gap: 10px; }
+  .iv-round { font-size: 14.5px; font-weight: 620; margin-right: auto; }
+  .iv-when { font-size: 13px; color: var(--soft); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .iv-notes { font-size: 13px; color: var(--muted); margin-top: 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .iv-fb {
+    margin-top: 8px; padding: 10px 12px; background: var(--sunken);
+    border-radius: var(--r-sm); font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .iv-fb b { display: block; font-size: 11.5px; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 3px; font-weight: 640; }
+
+  .lifecycle { overflow-x: auto; padding: 4px 0 2px; }
+  .lifecycle svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+
+  .flow { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+  .flow li { display: flex; align-items: center; gap: 10px; padding: 7px 0; }
+  .flow .mark {
+    width: 22px; height: 22px; flex: 0 0 auto; border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+    background: var(--sunken); color: var(--muted); border: 1px solid var(--border);
+  }
+  .flow .done .mark { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+  .flow .current .mark { background: var(--info-bg); color: var(--info); border-color: transparent; }
+  .flow .dropped .mark { background: var(--stop-bg); color: var(--stop); border-color: transparent; }
+  .flow .name { font-size: 14px; }
+  .flow .current .name { font-weight: 620; }
+  .flow .pending .name { color: var(--muted); }
+
+  .notes-body { font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  /* ============ Buttons ============ */
+
+  .btn {
+    min-height: 44px; padding: 0 16px;
+    border-radius: var(--r-md); border: 1px solid transparent;
+    font-size: 14.5px; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    text-decoration: none;
+  }
+  .btn-primary { background: var(--accent); color: var(--accent-fg); }
+  .btn-primary:disabled { opacity: 0.5; cursor: default; }
+  .btn-outline { background: var(--surface); border-color: var(--border-strong); color: var(--text); }
+  .btn-outline:active { background: var(--sunken); }
+  .btn-danger { background: transparent; color: var(--danger); border-color: transparent; padding: 0 10px; }
+  .btn-danger:active { background: var(--danger-soft); }
+  .btn-block { width: 100%; }
+
+  /* ============ Sheet ============ */
+
+  .backdrop {
+    position: fixed; inset: 0; z-index: 80;
+    background: rgba(10, 11, 14, 0.5);
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+  }
+  .backdrop.open { opacity: 1; visibility: visible; }
+
+  .sheet {
+    position: fixed; inset: 0; z-index: 90;
+    background: var(--surface);
+    display: flex; flex-direction: column;
+    transform: translateY(100%); visibility: hidden;
+    transition: transform 0.26s cubic-bezier(0.32, 0.72, 0, 1), visibility 0.26s;
+  }
+  .sheet.open { transform: translateY(0); visibility: visible; }
+
+  .sheet-head {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 10px;
+    padding: 10px 10px 10px 16px; padding-top: calc(10px + env(safe-area-inset-top));
+    border-bottom: 1px solid var(--border);
+  }
+  .sheet-title { font-size: 16px; font-weight: 640; margin: 0; letter-spacing: -0.015em; margin-right: auto; }
+  .sheet-body { flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; padding: 18px 16px 26px; }
+  .sheet-foot {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border); background: var(--surface);
+  }
+  .sheet-foot .btn-primary { flex: 1 1 auto; }
+
+  @media (min-width: 720px) {
+    .sheet {
+      inset: auto auto 0 50%; width: 100%; max-width: 580px; max-height: 90vh;
+      border-radius: var(--r-lg) var(--r-lg) 0 0;
+      transform: translate(-50%, 100%);
+      box-shadow: 0 -10px 50px rgba(0, 0, 0, 0.3);
+    }
+    .sheet.open { transform: translate(-50%, 0); }
+    .sheet-head { padding-top: 14px; }
+    .sheet-foot { padding-bottom: 14px; }
+  }
+
+  /* ============ Form ============ */
+
+  .field { margin-bottom: 15px; }
+  .field:last-child { margin-bottom: 0; }
+  .field > label { display: block; font-size: 13px; font-weight: 620; color: var(--soft); margin-bottom: 6px; }
+  .req { color: var(--danger); }
+  .hint { font-size: 12.5px; color: var(--muted); margin: 5px 0 0; }
+
+  .field input, .field select, .field textarea {
+    width: 100%; min-height: 46px; padding: 11px 12px;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border-strong); border-radius: var(--r-md);
+    font-size: 16px;
+  }
+  .field textarea { min-height: 92px; resize: vertical; line-height: 1.5; font-size: 15px; }
+  .field.bad input, .field.bad select { border-color: var(--danger); }
+  .err { color: var(--danger); font-size: 13px; margin: 6px 0 0; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .fieldset { border: none; margin: 0 0 15px; padding: 0; }
+  .fieldset > legend {
+    padding: 0; font-size: 11.5px; font-weight: 640; letter-spacing: 0.04em;
+    color: var(--muted); margin-bottom: 10px;
+  }
+  .divider { height: 1px; background: var(--border); margin: 20px 0; border: none; }
+
+  /* ============ Toast ============ */
+
+  .toast {
+    position: fixed; left: 50%; z-index: 100;
+    bottom: calc(88px + env(safe-area-inset-bottom));
+    transform: translate(-50%, 10px);
+    background: var(--text); color: var(--bg);
+    font-size: 13.5px; padding: 11px 17px; border-radius: 999px;
+    opacity: 0; pointer-events: none; max-width: 88vw; text-align: center;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+
+<header class="appbar">
+  <div class="appbar-inner wrap">
+    <div class="brand">Interview Tracker-AshOP</div>
+    <nav class="viewnav" id="viewnav" aria-label="Views">
+      <button type="button" data-view="calendar" aria-current="page">Calendar</button>
+      <button type="button" data-view="opportunities">Opportunities</button>
+    </nav>
+    <div class="appbar-actions">
+      <button type="button" class="btn-quiet" id="export-btn">Export</button>
+      <button type="button" class="btn-quiet" id="import-btn">Import</button>
+      <input type="file" id="import-file" accept="application/json,.json" hidden>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <p class="banner" id="storage-banner" hidden>
+    This browser is blocking local storage, so nothing added here will be saved. Turn off private
+    browsing or allow site data, then reload.
+  </p>
+</div>
+
+<main>
+  <!-- ============ Calendar view ============ -->
+  <section class="view wrap" id="view-calendar">
+    <div class="cal-layout">
+      <div class="panel cal-main">
+        <div class="cal-head">
+          <h2 class="cal-month" id="cal-month">Month</h2>
+          <div class="cal-nav">
+            <button type="button" class="icon-btn" id="cal-prev" aria-label="Previous month">&#8249;</button>
+            <button type="button" class="btn-quiet" id="cal-today">Today</button>
+            <button type="button" class="icon-btn" id="cal-next" aria-label="Next month">&#8250;</button>
+          </div>
+        </div>
+        <div class="cal-weekdays" aria-hidden="true">
+          <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+        </div>
+        <div class="cal-grid" id="cal-grid" role="grid" aria-label="Interview calendar"></div>
+        <div class="cal-legend">
+          <span><i class="dot scheduled"></i> Scheduled</span>
+          <span><i class="dot completed"></i> Completed</span>
+          <span><i class="dot rescheduled"></i> Rescheduled</span>
+          <span><i class="dot cancelled"></i> Cancelled</span>
+          <span><i class="dot noshow"></i> No show</span>
+        </div>
+      </div>
+
+      <div class="cal-side side-stack">
+        <div class="panel panel-pad" id="day-panel">
+          <h3 class="day-title" id="day-title">Select a date</h3>
+          <p class="day-sub" id="day-sub"></p>
+          <div id="day-events"></div>
+        </div>
+
+        <div class="panel panel-pad">
+          <p class="section-title">TODAY</p>
+          <div id="today-events"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Opportunities view ============ -->
+  <section class="view wrap" id="view-opportunities" hidden>
+    <div class="toolbar">
+      <input type="search" id="search" class="search" autocomplete="off" enterkeyhint="search"
+             placeholder="Search vendor, client, role, recruiter, job ID, notes, round"
+             aria-label="Search opportunities">
+      <select id="sort" class="select" aria-label="Sort opportunities">
+        <option value="next">Next interview</option>
+        <option value="updated">Recently updated</option>
+        <option value="created">Recently added</option>
+        <option value="vendor">Vendor A–Z</option>
+      </select>
+      <button type="button" class="btn-quiet" id="refine-toggle" aria-expanded="false">Refine</button>
+    </div>
+
+    <div class="refine" id="refine">
+      <select id="f-vendor" class="select" aria-label="Filter by vendor"><option value="">All vendors</option></select>
+      <select id="f-client" class="select" aria-label="Filter by client"><option value="">All clients</option></select>
+      <select id="f-round" class="select" aria-label="Filter by interview round"><option value="">All rounds</option></select>
+      <select id="f-mode" class="select" aria-label="Filter by interview mode">
+        <option value="">All modes</option>
+        <option value="Virtual">Virtual</option>
+        <option value="In-person">In-person</option>
+        <option value="Phone">Phone</option>
+      </select>
+    </div>
+
+    <div class="chips" id="chips" aria-label="Filter opportunities"></div>
+
+    <div class="opp-grid" id="opp-list"></div>
+  </section>
+</main>
+
+<button type="button" class="fab" id="fab">+ Add opportunity</button>
+
+<!-- ============ Ticket screen ============ -->
+<div class="screen" id="ticket" hidden role="region" aria-label="Opportunity detail">
+  <div class="ticket-bar">
+    <div class="ticket-bar-inner wrap">
+      <button type="button" class="back" id="ticket-back">&#8249; Back</button>
+      <button type="button" class="btn-quiet" id="ticket-edit">Edit</button>
+      <button type="button" class="btn-quiet" id="ticket-delete">Delete</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="ticket-grid">
+      <div class="ticket-col">
+        <div class="panel ticket-head">
+          <h2 class="ticket-vendor" id="t-vendor">Vendor</h2>
+          <p class="ticket-client" id="t-client"></p>
+          <p class="ticket-role" id="t-role"></p>
+          <div class="ticket-badges" id="t-badges"></div>
+        </div>
+
+        <div class="panel panel-pad">
+          <p class="section-title">NEXT INTERVIEW</p>
+          <div id="t-next"></div>
+        </div>
+
+        <div class="panel panel-pad">
+          <p class="section-title">LIFECYCLE</p>
+          <div class="lifecycle" id="t-lifecycle"></div>
+        </div>
+
+        <div class="panel panel-pad">
+          <p class="section-title">INTERVIEW HISTORY</p>
+          <div id="t-interviews"></div>
+          <button type="button" class="btn btn-outline btn-block" id="add-interview" style="margin-top:14px;">
+            + Schedule interview
+          </button>
+        </div>
+      </div>
+
+      <div class="ticket-col">
+        <div class="panel panel-pad">
+          <p class="section-title">OPPORTUNITY DETAILS</p>
+          <dl class="kv" id="t-details"></dl>
+          <div class="row-actions" id="t-contact"></div>
+        </div>
+
+        <div class="panel panel-pad">
+          <p class="section-title">NOTES</p>
+          <div class="notes-body" id="t-notes"></div>
+        </div>
+
+        <div class="panel panel-pad">
+          <p class="section-title">ACTIVITY</p>
+          <ul class="timeline" id="t-activity"></ul>
+          <div class="row-actions">
+            <input type="text" id="activity-input" class="search" style="height:42px;flex:1 1 150px;"
+                   placeholder="Add a note to the timeline" aria-label="Add activity entry">
+            <button type="button" class="btn btn-outline" id="activity-add">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="backdrop" id="backdrop"></div>
+
+<!-- ============ Opportunity sheet ============ -->
+<section class="sheet" id="opp-sheet" role="dialog" aria-modal="true" aria-labelledby="opp-sheet-title">
+  <div class="sheet-head">
+    <h2 class="sheet-title" id="opp-sheet-title">Add opportunity</h2>
+    <button type="button" class="icon-btn" id="opp-close" aria-label="Close">&#10005;</button>
+  </div>
+  <div class="sheet-body">
+    <form id="opp-form" novalidate>
+      <div class="field" id="wrap-vendor">
+        <label for="o-vendor">Vendor <span class="req" aria-hidden="true">*</span></label>
+        <input type="text" id="o-vendor" autocapitalize="words" placeholder="Zentek">
+        <p class="err" id="err-vendor" hidden>Enter the vendor or recruitment firm.</p>
+      </div>
+
+      <div class="field" id="wrap-client">
+        <label for="o-client">Client <span class="req" aria-hidden="true">*</span></label>
+        <input type="text" id="o-client" autocapitalize="words" placeholder="Capgemini">
+        <p class="err" id="err-client" hidden>Enter the client company.</p>
+      </div>
+
+      <div class="field" id="wrap-role">
+        <label for="o-role">Role <span class="req" aria-hidden="true">*</span></label>
+        <input type="text" id="o-role" placeholder="Linux System Administrator">
+        <p class="err" id="err-role" hidden>Enter the role you're being put forward for.</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="o-location">Location</label>
+          <select id="o-location">
+            <option value="Mumbai">Mumbai</option>
+            <option value="Pune">Pune</option>
+            <option value="Bangalore">Bangalore</option>
+            <option value="Delhi">Delhi</option>
+            <option value="Hyderabad">Hyderabad</option>
+            <option value="Remote">Remote</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="o-source">Source</label>
+          <input type="text" id="o-source" list="source-options" placeholder="Vendor call">
+          <datalist id="source-options">
+            <option value="Vendor call"></option>
+            <option value="Referral"></option>
+            <option value="Naukri"></option>
+            <option value="LinkedIn"></option>
+            <option value="Direct"></option>
+          </datalist>
+        </div>
+      </div>
+
+      <div id="opp-more" hidden>
+        <hr class="divider">
+
+        <fieldset class="fieldset">
+          <legend>STATUS</legend>
+          <div class="grid-2">
+            <div class="field">
+              <label for="o-status">Opportunity status</label>
+              <select id="o-status"></select>
+            </div>
+            <div class="field">
+              <label for="o-stage">Current stage</label>
+              <input type="text" id="o-stage" list="stage-options" placeholder="HR Screening">
+              <datalist id="stage-options">
+                <option value="HR Screening"></option>
+                <option value="BGV"></option>
+                <option value="Technical"></option>
+                <option value="Managerial"></option>
+                <option value="Client Round"></option>
+                <option value="Final HR"></option>
+                <option value="Salary Discussion"></option>
+                <option value="Offer"></option>
+              </datalist>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend>RECRUITER</legend>
+          <div class="field">
+            <label for="o-rname">Name</label>
+            <input type="text" id="o-rname" autocapitalize="words">
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="o-rphone">Phone</label>
+              <input type="tel" id="o-rphone" inputmode="tel" autocomplete="tel">
+            </div>
+            <div class="field">
+              <label for="o-remail">Email</label>
+              <input type="email" id="o-remail" inputmode="email" autocomplete="email">
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend>JOB DETAILS</legend>
+          <div class="grid-2">
+            <div class="field">
+              <label for="o-jobid">Job ID</label>
+              <input type="text" id="o-jobid">
+            </div>
+            <div class="field">
+              <label for="o-employment">Employment type</label>
+              <select id="o-employment">
+                <option value="">Not set</option>
+                <option value="Permanent">Permanent</option>
+                <option value="Contract">Contract</option>
+                <option value="Contract-to-Hire">Contract-to-Hire</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend>COMPENSATION</legend>
+          <div class="grid-2">
+            <div class="field">
+              <label for="o-cctc">Current CTC</label>
+              <input type="text" id="o-cctc" placeholder="6.5 LPA">
+            </div>
+            <div class="field">
+              <label for="o-ectc">Expected CTC</label>
+              <input type="text" id="o-ectc" placeholder="9 LPA">
+            </div>
+          </div>
+          <div class="field">
+            <label for="o-octc">Offered CTC</label>
+            <input type="text" id="o-octc">
+          </div>
+        </fieldset>
+
+        <div class="field">
+          <label for="o-notes">Notes</label>
+          <textarea id="o-notes" rows="4" placeholder="Anything worth remembering about this opportunity"></textarea>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-outline btn-block" id="opp-more-toggle" style="margin-top:4px;">
+        Add more details
+      </button>
+    </form>
+  </div>
+  <div class="sheet-foot">
+    <button type="button" class="btn btn-outline" id="opp-cancel">Cancel</button>
+    <button type="submit" class="btn btn-primary" id="opp-save" form="opp-form">Create opportunity</button>
+  </div>
+</section>
+
+<!-- ============ Interview sheet ============ -->
+<section class="sheet" id="iv-sheet" role="dialog" aria-modal="true" aria-labelledby="iv-sheet-title">
+  <div class="sheet-head">
+    <h2 class="sheet-title" id="iv-sheet-title">Schedule interview</h2>
+    <button type="button" class="icon-btn" id="iv-close" aria-label="Close">&#10005;</button>
+  </div>
+  <div class="sheet-body">
+    <form id="iv-form" novalidate>
+      <div class="field" id="wrap-round">
+        <label for="i-round">Round <span class="req" aria-hidden="true">*</span></label>
+        <select id="i-round"></select>
+        <p class="err" id="err-round" hidden>Pick which round this is.</p>
+      </div>
+
+      <div class="field" id="wrap-roundother" hidden>
+        <label for="i-roundother">Round name</label>
+        <input type="text" id="i-roundother" placeholder="e.g. Panel discussion">
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="i-date">Date</label>
+          <input type="date" id="i-date">
+        </div>
+        <div class="field">
+          <label for="i-time">Time</label>
+          <input type="time" id="i-time">
+        </div>
+      </div>
+      <p class="hint" style="margin:-9px 0 15px;">Leave both blank if the round isn't confirmed yet.</p>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="i-mode">Mode</label>
+          <select id="i-mode">
+            <option value="Virtual">Virtual</option>
+            <option value="In-person">In-person</option>
+            <option value="Phone">Phone</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="i-status">Interview status</label>
+          <select id="i-status"></select>
+        </div>
+      </div>
+
+      <div class="field" id="wrap-link">
+        <label for="i-link">Meeting link</label>
+        <input type="url" id="i-link" inputmode="url" placeholder="https://teams.microsoft.com/...">
+      </div>
+
+      <div class="field" id="wrap-ivlocation" hidden>
+        <label for="i-location">Venue</label>
+        <input type="text" id="i-location" placeholder="Office address or floor">
+      </div>
+
+      <div class="field">
+        <label for="i-interviewer">Interviewer</label>
+        <input type="text" id="i-interviewer" autocapitalize="words">
+      </div>
+
+      <div class="field">
+        <label for="i-notes">Notes</label>
+        <textarea id="i-notes" rows="3" placeholder="What to prepare, who set it up, panel details"></textarea>
+      </div>
+
+      <div id="iv-outcome" hidden>
+        <hr class="divider">
+        <fieldset class="fieldset">
+          <legend>OUTCOME</legend>
+          <div class="field">
+            <label for="i-result">Result</label>
+            <select id="i-result">
+              <option value="">Not known yet</option>
+              <option value="Cleared">Cleared</option>
+              <option value="Rejected">Rejected</option>
+              <option value="On Hold">On hold</option>
+              <option value="Awaiting Feedback">Awaiting feedback</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="i-questions">Questions asked</label>
+            <textarea id="i-questions" rows="3" placeholder="LVM extension, systemd targets, NFS mounts"></textarea>
+          </div>
+          <div class="field">
+            <label for="i-feedback">Feedback</label>
+            <textarea id="i-feedback" rows="3" placeholder="What went well, what to improve"></textarea>
+          </div>
+        </fieldset>
+      </div>
+    </form>
+  </div>
+  <div class="sheet-foot">
+    <button type="button" class="btn btn-danger" id="iv-delete" hidden>Delete</button>
+    <button type="button" class="btn btn-outline" id="iv-cancel">Cancel</button>
+    <button type="submit" class="btn btn-primary" id="iv-save" form="iv-form">Save interview</button>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(function () {
+  'use strict';
+
+  /* =====================================================================
+     Constants
+     ===================================================================== */
+
+  var DB_NAME = 'interview-tracker-db';
+  var DB_VERSION = 2;
+  var STORE = 'opportunities';
+  var LEGACY_STORE = 'interviews';
+
+  var OPP_STATUSES = ['In Progress', 'Waiting', 'On Hold', 'Offer', 'Rejected', 'Withdrawn', 'Closed'];
+  var IV_STATUSES = ['Scheduled', 'Completed', 'Cancelled', 'Rescheduled', 'No Show'];
+  var ROUNDS = ['HR Screening', 'Technical', 'L2 Technical', 'L3 Technical', 'Managerial',
+                'Client Round', 'Final HR', 'Salary Discussion', 'BGV', 'Other'];
+  var MODES = ['Virtual', 'In-person', 'Phone'];
+  var LOCATIONS = ['Mumbai', 'Pune', 'Bangalore', 'Delhi', 'Hyderabad', 'Remote', 'Other'];
+  var DEFAULT_LOCATION = 'Mumbai';
+  var LIVE_IV = ['Scheduled', 'Rescheduled'];
+
+  var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+  var MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  var FILTERS = [
+    { key: 'all', label: 'All' },
+    { key: 'upcoming', label: 'Upcoming' },
+    { key: 'today', label: 'Today' },
+    { key: 'In Progress', label: 'In progress' },
+    { key: 'Waiting', label: 'Waiting' },
+    { key: 'On Hold', label: 'On hold' },
+    { key: 'Offer', label: 'Offer' },
+    { key: 'Rejected', label: 'Rejected' },
+    { key: 'Closed', label: 'Closed' }
+  ];
+
+  /* =====================================================================
+     State
+     ===================================================================== */
+
+  var state = {
+    opportunities: [],
+    view: 'calendar',
+    search: '',
+    filter: 'all',
+    sort: 'next',
+    refine: { vendor: '', client: '', round: '', mode: '' },
+    calendarMonth: null,
+    selectedDate: null,
+    ticketId: null
+  };
+
+  var db = null;
+  var storageBlocked = false;
+  var toastTimer = null;
+  var oppEditingId = null;
+  var ivEditing = { oppId: null, ivId: null };
+  var lastFocused = null;
+
+  /* =====================================================================
+     Small helpers
+     ===================================================================== */
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, txt) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (txt !== undefined && txt !== null) node.textContent = txt;
+    return node;
+  }
+  function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+  function text(value) {
+    if (value == null || typeof value === 'object') return '';
+    return String(value).trim();
+  }
+
+  function uid(prefix) {
+    return (prefix || 'x') + '_' + Date.now().toString(36) + '_' +
+      Math.random().toString(36).slice(2, 8);
+  }
+
+  function isDateStr(value) {
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    var p = value.split('-');
+    var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    return d.getFullYear() === Number(p[0]) && d.getMonth() === Number(p[1]) - 1 &&
+           d.getDate() === Number(p[2]);
+  }
+
+  function isTimeStr(value) {
+    if (typeof value !== 'string' || !/^\d{2}:\d{2}$/.test(value)) return false;
+    var p = value.split(':');
+    return Number(p[0]) < 24 && Number(p[1]) < 60;
+  }
+
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+
+  function toKey(date) {
+    return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+  }
+
+  function todayKey() { return toKey(new Date()); }
+
+  function parseKey(key) {
+    var p = String(key).split('-');
+    return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  }
+
+  function fmtLong(key) {
+    if (!isDateStr(key)) return '';
+    var d = parseKey(key);
+    return d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+  }
+
+  function fmtShort(key) {
+    if (!isDateStr(key)) return '';
+    var d = parseKey(key);
+    return d.getDate() + ' ' + MONTHS_SHORT[d.getMonth()] + ' ' + d.getFullYear();
+  }
+
+  function fmtTime(value) {
+    if (!isTimeStr(value)) return '';
+    var p = value.split(':');
+    var h = Number(p[0]);
+    var suffix = h >= 12 ? 'PM' : 'AM';
+    var hour = h % 12 === 0 ? 12 : h % 12;
+    return hour + ':' + p[1] + ' ' + suffix;
+  }
+
+  function dayOffset(key) {
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    return Math.round((parseKey(key) - today) / 86400000);
+  }
+
+  function relativeDay(key) {
+    var diff = dayOffset(key);
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Tomorrow';
+    if (diff === -1) return 'Yesterday';
+    return '';
+  }
+
+  function fmtStamp(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.getDate() + ' ' + MONTHS_SHORT[d.getMonth()] + ' \u00b7 ' +
+      pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  function slug(value) {
+    return String(value).toLowerCase().replace(/[^a-z0-9]+/g, '');
+  }
+
+  function showToast(message) {
+    var toast = $('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 2600);
+  }
+
+  function describeError(err) {
+    var name = err && err.name;
+    if (name === 'QuotaExceededError') return 'Storage is full. Export a backup, then remove old opportunities.';
+    if (name === 'InvalidStateError' || name === 'NotFoundError') return 'The local database went away. Reload the page.';
+    return null;
+  }
+
+  /* =====================================================================
+     Data model
+     ===================================================================== */
+
+  function normalizeInterview(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    var now = new Date().toISOString();
+    var created = text(raw.createdAt) || now;
+    return {
+      id: text(raw.id) || uid('iv'),
+      round: text(raw.round) || 'Other',
+      date: isDateStr(raw.date) ? raw.date : '',
+      time: isTimeStr(raw.time) ? raw.time : '',
+      mode: MODES.indexOf(raw.mode) > -1 ? raw.mode : '',
+      location: text(raw.location),
+      meetingLink: text(raw.meetingLink),
+      interviewer: text(raw.interviewer),
+      status: IV_STATUSES.indexOf(raw.status) > -1 ? raw.status : 'Scheduled',
+      result: text(raw.result),
+      questions: typeof raw.questions === 'string' ? raw.questions.trim() : '',
+      notes: typeof raw.notes === 'string' ? raw.notes.trim() : '',
+      feedback: typeof raw.feedback === 'string' ? raw.feedback.trim() : '',
+      createdAt: created,
+      updatedAt: text(raw.updatedAt) || created
+    };
+  }
+
+  function normalizeActivity(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    var body = typeof raw.text === 'string' ? raw.text.trim() : '';
+    if (!body) return null;
+    return {
+      id: text(raw.id) || uid('ac'),
+      timestamp: text(raw.timestamp) || new Date().toISOString(),
+      type: text(raw.type) || 'note',
+      text: body
+    };
+  }
+
+  /** Converts a record from the previous single-interview schema. */
+  function fromLegacy(raw) {
+    var now = new Date().toISOString();
+    var created = text(raw.createdAt) || now;
+    var round = text(raw.round);
+    var interviews = [];
+
+    if (isDateStr(raw.nextDate)) {
+      interviews.push({
+        id: uid('iv'),
+        round: round || 'Other',
+        date: raw.nextDate,
+        status: dayOffset(raw.nextDate) < 0 ? 'Completed' : 'Scheduled',
+        createdAt: created,
+        updatedAt: text(raw.updatedAt) || created
+      });
+    }
+
+    var activity = [{ id: uid('ac'), timestamp: created, type: 'created', text: 'Opportunity created' }];
+    if (interviews.length) {
+      activity.push({
+        id: uid('ac'), timestamp: created, type: 'interview',
+        text: (round || 'Interview') + ' carried over from the earlier version'
+      });
+    }
+
+    return {
+      id: raw.id,
+      vendor: '',
+      // The old schema stored one company name; it maps to the interviewing client.
+      client: text(raw.company),
+      role: text(raw.role),
+      currentStage: round,
+      status: OPP_STATUSES.indexOf(raw.status) > -1 ? raw.status : 'In Progress',
+      notes: typeof raw.notes === 'string' ? raw.notes.trim() : '',
+      createdAt: created,
+      updatedAt: text(raw.updatedAt) || created,
+      interviews: interviews,
+      activity: activity
+    };
+  }
+
+  function looksLegacy(raw) {
+    return !!raw && typeof raw === 'object' &&
+      raw.vendor === undefined && raw.client === undefined &&
+      raw.interviews === undefined && raw.company !== undefined;
+  }
+
+  function normalizeOpportunity(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    var src = looksLegacy(raw) ? fromLegacy(raw) : raw;
+    var now = new Date().toISOString();
+    var created = text(src.createdAt) || now;
+
+    var interviews = (Array.isArray(src.interviews) ? src.interviews : [])
+      .map(normalizeInterview)
+      .filter(Boolean);
+
+    var activity = (Array.isArray(src.activity) ? src.activity : [])
+      .map(normalizeActivity)
+      .filter(Boolean);
+
+    if (!activity.length) {
+      activity.push({ id: uid('ac'), timestamp: created, type: 'created', text: 'Opportunity created' });
+    }
+
+    return {
+      id: src.id,
+      vendor: text(src.vendor),
+      client: text(src.client),
+      role: text(src.role),
+      source: text(src.source),
+      location: text(src.location),
+      employmentType: text(src.employmentType),
+      recruiterName: text(src.recruiterName),
+      recruiterPhone: text(src.recruiterPhone),
+      recruiterEmail: text(src.recruiterEmail),
+      jobId: text(src.jobId),
+      currentCTC: text(src.currentCTC),
+      expectedCTC: text(src.expectedCTC),
+      offeredCTC: text(src.offeredCTC),
+      status: OPP_STATUSES.indexOf(src.status) > -1 ? src.status : 'In Progress',
+      currentStage: text(src.currentStage),
+      notes: typeof src.notes === 'string' ? src.notes.trim() : '',
+      createdAt: created,
+      updatedAt: text(src.updatedAt) || created,
+      interviews: interviews,
+      activity: activity
+    };
+  }
+
+  function stripId(record) {
+    var copy = {};
+    Object.keys(record).forEach(function (key) {
+      if (key !== 'id') copy[key] = record[key];
+    });
+    return copy;
+  }
+
+  function ivSortKey(iv) {
+    return (iv.date || '9999-99-99') + 'T' + (iv.time || '99:99');
+  }
+
+  function sortedInterviews(opp) {
+    return opp.interviews.slice().sort(function (a, b) {
+      var ak = ivSortKey(a);
+      var bk = ivSortKey(b);
+      if (ak !== bk) return ak < bk ? -1 : 1;
+      return (a.createdAt || '') < (b.createdAt || '') ? -1 : 1;
+    });
+  }
+
+  function nextInterview(opp) {
+    var today = todayKey();
+    var candidates = opp.interviews.filter(function (iv) {
+      return iv.date && LIVE_IV.indexOf(iv.status) > -1 && iv.date >= today;
+    });
+    candidates.sort(function (a, b) { return ivSortKey(a) < ivSortKey(b) ? -1 : 1; });
+    return candidates[0] || null;
+  }
+
+  function partyLine(opp) {
+    if (opp.vendor && opp.client) return opp.vendor + ' \u2192 ' + opp.client;
+    return opp.vendor || opp.client || 'Untitled opportunity';
+  }
+
+  function progress(opp) {
+    var total = opp.interviews.length;
+    var done = opp.interviews.filter(function (iv) { return iv.status === 'Completed'; }).length;
+    return { done: done, total: total };
+  }
+
+  function addActivity(opp, type, body) {
+    opp.activity.push({
+      id: uid('ac'),
+      timestamp: new Date().toISOString(),
+      type: type,
+      text: body
+    });
+    if (opp.activity.length > 200) opp.activity = opp.activity.slice(-200);
+  }
+
+  function searchBlob(opp) {
+    var parts = [opp.vendor, opp.client, opp.role, opp.recruiterName, opp.jobId,
+                 opp.notes, opp.source, opp.location, opp.currentStage, opp.status];
+    opp.interviews.forEach(function (iv) {
+      parts.push(iv.round, iv.interviewer, iv.notes, iv.feedback, iv.questions, iv.mode, iv.result);
+    });
+    return parts.join(' \u0000 ').toLowerCase();
+  }
+
+  /* =====================================================================
+     IndexedDB — version 2 with migration from version 1
+     ===================================================================== */
+
+  function closeDB() {
+    if (db) {
+      try { db.close(); } catch (err) { /* already closed */ }
+      db = null;
+    }
+  }
+
+  /**
+   * Copies every version-1 record into the new opportunities store during the
+   * version-change transaction. The old store is left in place untouched, so a
+   * failed migration never costs the user their data.
+   */
+  function migrateLegacyStore(transaction) {
+    try {
+      var legacy = transaction.objectStore(LEGACY_STORE);
+      var target = transaction.objectStore(STORE);
+      var cursorRequest = legacy.openCursor();
+      cursorRequest.onsuccess = function (event) {
+        var cursor = event.target.result;
+        if (!cursor) return;
+        try {
+          var migrated = normalizeOpportunity(cursor.value);
+          if (migrated && (migrated.client || migrated.vendor || migrated.role)) {
+            target.add(stripId(migrated));
+          }
+        } catch (err) {
+          console.warn('One legacy record could not be migrated.', err);
+        }
+        cursor.continue();
+      };
+    } catch (err) {
+      console.warn('Legacy migration was skipped.', err);
+    }
+  }
+
+  function openDB() {
+    return new Promise(function (resolve, reject) {
+      if (typeof indexedDB === 'undefined' || !indexedDB) {
+        reject(new Error('IndexedDB is not available'));
+        return;
+      }
+      var request;
+      try {
+        request = indexedDB.open(DB_NAME, DB_VERSION);
+      } catch (err) {
+        reject(err);
+        return;
+      }
+
+      request.onupgradeneeded = function (event) {
+        try {
+          var database = event.target.result;
+          var transaction = event.target.transaction;
+          var fresh = !database.objectStoreNames.contains(STORE);
+          if (fresh) database.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+          if (event.oldVersion >= 1 && event.oldVersion < 2 &&
+              database.objectStoreNames.contains(LEGACY_STORE)) {
+            migrateLegacyStore(transaction);
+          }
+        } catch (err) {
+          reject(err);
+        }
+      };
+
+      request.onsuccess = function () {
+        var connection = request.result;
+        if (!connection.objectStoreNames.contains(STORE)) {
+          try { connection.close(); } catch (e) { /* ignore */ }
+          reject(new Error('Object store is missing'));
+          return;
+        }
+        connection.onversionchange = function () { closeDB(); };
+        connection.onclose = function () { db = null; };
+        resolve(connection);
+      };
+
+      request.onerror = function () { reject(request.error || new Error('Could not open the database')); };
+      request.onblocked = function () { reject(new Error('Another tab is holding the database open')); };
+    });
+  }
+
+  function deleteDatabase() {
+    return new Promise(function (resolve) {
+      var request;
+      try {
+        request = indexedDB.deleteDatabase(DB_NAME);
+      } catch (err) { resolve(); return; }
+      request.onsuccess = function () { resolve(); };
+      request.onerror = function () { resolve(); };
+      request.onblocked = function () { resolve(); };
+    });
+  }
+
+  /**
+   * Rebuilding is a last resort: it only runs when the database cannot be
+   * opened at all, which means the existing data is already unreadable.
+   */
+  function setupDB() {
+    return openDB().then(function (connection) {
+      db = connection;
+      return 'ok';
+    }).catch(function (err) {
+      console.warn('The database could not be opened, rebuilding it.', err);
+      closeDB();
+      return deleteDatabase().then(openDB).then(function (connection) {
+        db = connection;
+        return 'rebuilt';
+      }).catch(function (err2) {
+        console.error('The database is unavailable.', err2);
+        db = null;
+        return 'unavailable';
+      });
+    });
+  }
+
+  function withStore(mode, action) {
+    return new Promise(function (resolve, reject) {
+      if (!db) { reject(new Error('No database connection')); return; }
+
+      var transaction;
+      try {
+        transaction = db.transaction(STORE, mode);
+      } catch (err) { reject(err); return; }
+
+      var payload;
+      var settled = false;
+      function fail(error) {
+        if (settled) return;
+        settled = true;
+        reject(error || new Error('The transaction failed'));
+      }
+      transaction.oncomplete = function () {
+        if (settled) return;
+        settled = true;
+        resolve(payload);
+      };
+      transaction.onerror = function () { fail(transaction.error); };
+      transaction.onabort = function () { fail(transaction.error); };
+
+      try {
+        payload = action(transaction.objectStore(STORE));
+      } catch (err) {
+        try { transaction.abort(); } catch (e) { /* ignore */ }
+        fail(err);
+      }
+    });
+  }
+
+  function boxed(request) {
+    var box = { value: undefined };
+    request.onsuccess = function () { box.value = request.result; };
+    return box;
+  }
+
+  function dbGetAll() {
+    return withStore('readonly', function (store) { return boxed(store.getAll()); })
+      .then(function (box) { return box.value || []; });
+  }
+
+  function dbAdd(record) {
+    return withStore('readwrite', function (store) { return boxed(store.add(record)); })
+      .then(function (box) { return box.value; });
+  }
+
+  function dbPut(record) {
+    return withStore('readwrite', function (store) { store.put(record); });
+  }
+
+  function dbRemove(id) {
+    return withStore('readwrite', function (store) { store.delete(id); });
+  }
+
+  function dbReplaceAll(records) {
+    return withStore('readwrite', function (store) {
+      var ids = [];
+      store.clear();
+      records.forEach(function (record, index) {
+        var request = store.add(record);
+        request.onsuccess = function () { ids[index] = request.result; };
+      });
+      return ids;
+    });
+  }
+
+  function readAll() {
+    return dbGetAll().then(function (rows) {
+      return rows.map(normalizeOpportunity).filter(function (opp) {
+        return opp && opp.id !== undefined && opp.id !== null;
+      });
+    });
+  }
+
+  function loadAll() {
+    if (!db) { state.opportunities = []; renderAll(); return Promise.resolve(); }
+
+    return readAll().catch(function (err) {
+      console.error('Reading opportunities failed, rebuilding the database.', err);
+      return setupDB().then(function (result) {
+        if (result === 'unavailable') {
+          storageBlocked = true;
+          $('storage-banner').hidden = false;
+          return [];
+        }
+        showToast('The local database was rebuilt.');
+        return readAll().catch(function () {
+          showToast('Saved opportunities could not be read.');
+          return [];
+        });
+      });
+    }).then(function (rows) {
+      state.opportunities = rows;
+      renderAll();
+    });
+  }
+
+  function findOpp(id) {
+    var found = null;
+    state.opportunities.forEach(function (opp) {
+      if (String(opp.id) === String(id)) found = opp;
+    });
+    return found;
+  }
+
+  function persist(opp, message) {
+    opp.updatedAt = new Date().toISOString();
+    return dbPut(opp).then(function () {
+      renderAll();
+      if (message) showToast(message);
+    }).catch(function (err) {
+      console.error('Saving failed.', err);
+      showToast(describeError(err) || 'That could not be saved. Try again.');
+      return loadAll();
+    });
+  }
+
+  /* =====================================================================
+     Shared render pieces
+     ===================================================================== */
+
+  function badge(label, kind, plain) {
+    var node = el('span', 'badge ' + (plain ? 'plain ' : '') + 'b-' + slug(kind || label), label);
+    return node;
+  }
+
+  function allEvents() {
+    var events = [];
+    state.opportunities.forEach(function (opp) {
+      opp.interviews.forEach(function (iv) {
+        if (iv.date) events.push({ opp: opp, iv: iv });
+      });
+    });
+    return events;
+  }
+
+  function eventsByDate() {
+    var map = {};
+    allEvents().forEach(function (item) {
+      if (!map[item.iv.date]) map[item.iv.date] = [];
+      map[item.iv.date].push(item);
+    });
+    Object.keys(map).forEach(function (key) {
+      map[key].sort(function (a, b) {
+        return (a.iv.time || '99:99') < (b.iv.time || '99:99') ? -1 : 1;
+      });
+    });
+    return map;
+  }
+
+  function renderEventList(container, items, emptyText) {
+    clear(container);
+    if (!items.length) {
+      container.appendChild(el('p', 'none', emptyText));
+      return;
+    }
+    items.forEach(function (item) {
+      var opp = item.opp;
+      var iv = item.iv;
+      var button = el('button', 'event');
+      button.type = 'button';
+      button.dataset.opp = String(opp.id);
+
+      button.appendChild(el('div', 'event-time', fmtTime(iv.time) || 'Time not set'));
+      button.appendChild(el('div', 'event-party', partyLine(opp)));
+      if (opp.role) button.appendChild(el('div', 'event-role', opp.role));
+
+      var meta = el('div', 'event-meta');
+      meta.appendChild(el('span', null, iv.round + (iv.mode ? ' \u00b7 ' + iv.mode : '')));
+      meta.appendChild(badge(iv.status, iv.status));
+      button.appendChild(meta);
+
+      button.addEventListener('click', function () { openTicket(opp.id); });
+      container.appendChild(button);
+    });
+  }
+
+  /* =====================================================================
+     Calendar
+     ===================================================================== */
+
+  function monthStart(date) { return new Date(date.getFullYear(), date.getMonth(), 1); }
+
+  function renderCalendar() {
+    var cursor = state.calendarMonth || monthStart(new Date());
+    state.calendarMonth = cursor;
+
+    $('cal-month').textContent = MONTHS[cursor.getMonth()] + ' ' + cursor.getFullYear();
+
+    var grid = $('cal-grid');
+    clear(grid);
+
+    var byDate = eventsByDate();
+    var first = monthStart(cursor);
+    var offset = (first.getDay() + 6) % 7; // Monday-first
+    var start = new Date(first.getFullYear(), first.getMonth(), 1 - offset);
+    var today = todayKey();
+
+    for (var i = 0; i < 42; i++) {
+      var day = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      var key = toKey(day);
+      var inMonth = day.getMonth() === cursor.getMonth();
+      var events = byDate[key] || [];
+
+      var cell = el('button', 'cal-day' + (inMonth ? '' : ' muted') + (key === today ? ' today' : ''));
+      cell.type = 'button';
+      cell.dataset.date = key;
+      cell.setAttribute('role', 'gridcell');
+      cell.setAttribute('aria-selected', key === state.selectedDate ? 'true' : 'false');
+      cell.setAttribute('aria-label', fmtLong(key) +
+        (events.length ? ', ' + events.length + ' interview' + (events.length === 1 ? '' : 's') : ''));
+
+      cell.appendChild(el('span', 'num', String(day.getDate())));
+
+      var dots = el('span', 'dots');
+      events.slice(0, 3).forEach(function (item) {
+        dots.appendChild(el('i', 'dot ' + slug(item.iv.status)));
+      });
+      if (events.length > 3) dots.appendChild(el('span', 'more', '+' + (events.length - 3)));
+      cell.appendChild(dots);
+
+      grid.appendChild(cell);
+    }
+
+    renderDayPanel();
+    renderToday();
+  }
+
+  function renderDayPanel() {
+    var key = state.selectedDate;
+    var title = $('day-title');
+    var sub = $('day-sub');
+    var body = $('day-events');
+
+    if (!key) {
+      title.textContent = 'Select a date';
+      sub.textContent = 'Pick a day on the calendar to see what is scheduled.';
+      clear(body);
+      return;
+    }
+
+    var items = eventsByDate()[key] || [];
+    var relative = relativeDay(key);
+    title.textContent = fmtLong(key);
+    sub.textContent = (relative ? relative + ' \u00b7 ' : '') +
+      (items.length ? items.length + ' interview' + (items.length === 1 ? '' : 's') : 'Nothing scheduled');
+
+    renderEventList(body, items, 'No interviews on this date.');
+  }
+
+  function renderToday() {
+    var items = eventsByDate()[todayKey()] || [];
+    renderEventList($('today-events'), items, 'No interviews scheduled today.');
+  }
+
+  /* =====================================================================
+     Opportunities list
+     ===================================================================== */
+
+  function matchesRefine(opp) {
+    var r = state.refine;
+    if (r.vendor && opp.vendor !== r.vendor) return false;
+    if (r.client && opp.client !== r.client) return false;
+    if (r.round && !opp.interviews.some(function (iv) { return iv.round === r.round; })) return false;
+    if (r.mode && !opp.interviews.some(function (iv) { return iv.mode === r.mode; })) return false;
+    return true;
+  }
+
+  function searchAndRefine() {
+    var query = state.search.trim().toLowerCase();
+    return state.opportunities.filter(function (opp) {
+      if (!matchesRefine(opp)) return false;
+      if (!query) return true;
+      return searchBlob(opp).indexOf(query) > -1;
+    });
+  }
+
+  function passesFilter(opp, key) {
+    if (key === 'all') return true;
+    if (key === 'upcoming') return !!nextInterview(opp);
+    if (key === 'today') {
+      var today = todayKey();
+      return opp.interviews.some(function (iv) { return iv.date === today; });
+    }
+    return opp.status === key;
+  }
+
+  function sortOpportunities(rows) {
+    var mode = state.sort;
+    return rows.slice().sort(function (a, b) {
+      if (mode === 'vendor') {
+        var av = (a.vendor || a.client || '').toLowerCase();
+        var bv = (b.vendor || b.client || '').toLowerCase();
+        if (av !== bv) return av < bv ? -1 : 1;
+      } else if (mode === 'next') {
+        var an = nextInterview(a);
+        var bn = nextInterview(b);
+        if (an && bn) {
+          var ak = ivSortKey(an);
+          var bk = ivSortKey(bn);
+          if (ak !== bk) return ak < bk ? -1 : 1;
+        } else if (an) { return -1; }
+        else if (bn) { return 1; }
+      } else if (mode === 'created') {
+        if (a.createdAt !== b.createdAt) return a.createdAt < b.createdAt ? 1 : -1;
+      }
+      if (a.updatedAt !== b.updatedAt) return a.updatedAt < b.updatedAt ? 1 : -1;
+      return Number(b.id || 0) - Number(a.id || 0);
+    });
+  }
+
+  function renderChips(pool) {
+    var chips = $('chips');
+    clear(chips);
+    FILTERS.forEach(function (filter) {
+      var count = pool.filter(function (opp) { return passesFilter(opp, filter.key); }).length;
+      if (count === 0 && filter.key !== 'all' && state.filter !== filter.key) return;
+      var chip = el('button', 'chip');
+      chip.type = 'button';
+      chip.dataset.filter = filter.key;
+      chip.setAttribute('aria-pressed', state.filter === filter.key ? 'true' : 'false');
+      chip.appendChild(document.createTextNode(filter.label));
+      chip.appendChild(el('span', 'n', String(count)));
+      chips.appendChild(chip);
+    });
+  }
+
+  function refreshRefineOptions() {
+    var vendors = {};
+    var clients = {};
+    var rounds = {};
+    state.opportunities.forEach(function (opp) {
+      if (opp.vendor) vendors[opp.vendor] = true;
+      if (opp.client) clients[opp.client] = true;
+      opp.interviews.forEach(function (iv) { if (iv.round) rounds[iv.round] = true; });
+    });
+
+    function fill(select, values, allLabel, current) {
+      clear(select);
+      select.appendChild(new Option(allLabel, ''));
+      Object.keys(values).sort().forEach(function (value) {
+        select.appendChild(new Option(value, value));
+      });
+      select.value = values[current] ? current : '';
+      if (select.value !== current) state.refine[select.dataset.key] = select.value;
+    }
+
+    fill($('f-vendor'), vendors, 'All vendors', state.refine.vendor);
+    fill($('f-client'), clients, 'All clients', state.refine.client);
+    fill($('f-round'), rounds, 'All rounds', state.refine.round);
+  }
+
+  function buildCard(opp) {
+    var card = el('button', 'opp');
+    card.type = 'button';
+    card.dataset.opp = String(opp.id);
+
+    var top = el('div', 'opp-top');
+    var names = el('div');
+    names.style.minWidth = '0';
+    names.style.marginRight = 'auto';
+    names.appendChild(el('div', 'opp-vendor', opp.vendor || opp.client || 'Untitled'));
+    if (opp.vendor && opp.client) {
+      var clientLine = el('div', 'opp-client');
+      clientLine.appendChild(document.createTextNode('Client: '));
+      clientLine.appendChild(el('b', null, opp.client));
+      names.appendChild(clientLine);
+    }
+    top.appendChild(names);
+    top.appendChild(badge(opp.status, opp.status));
+    card.appendChild(top);
+
+    if (opp.role) card.appendChild(el('div', 'opp-role', opp.role));
+
+    var next = nextInterview(opp);
+    var box = el('div', 'opp-next');
+    box.appendChild(el('div', 'label', 'NEXT INTERVIEW'));
+    if (next) {
+      box.appendChild(el('div', 'round', next.round));
+      var when = fmtShort(next.date);
+      var relative = relativeDay(next.date);
+      if (relative) when = relative + ' \u00b7 ' + when;
+      if (next.time) when += ' \u00b7 ' + fmtTime(next.time);
+      box.appendChild(el('div', 'when', when));
+      if (next.mode) box.appendChild(el('div', 'when', next.mode));
+    } else {
+      box.appendChild(el('div', 'empty', 'Interview not scheduled'));
+    }
+    card.appendChild(box);
+
+    var stats = progress(opp);
+    if (stats.total) {
+      var foot = el('div', 'opp-foot');
+      foot.appendChild(el('span', null, stats.done + ' of ' + stats.total + ' rounds done'));
+      var bar = el('div', 'bar');
+      var fill = el('i');
+      fill.style.width = Math.round((stats.done / stats.total) * 100) + '%';
+      bar.appendChild(fill);
+      foot.appendChild(bar);
+      card.appendChild(foot);
+    }
+
+    return card;
+  }
+
+  function renderOpportunities() {
+    var pool = searchAndRefine();
+    refreshRefineOptions();
+    renderChips(pool);
+
+    var rows = sortOpportunities(pool.filter(function (opp) {
+      return passesFilter(opp, state.filter);
+    }));
+
+    var list = $('opp-list');
+    clear(list);
+
+    if (!rows.length) {
+      var empty = el('div', 'empty-state');
+      empty.style.gridColumn = '1 / -1';
+      if (storageBlocked) {
+        empty.appendChild(el('strong', null, 'Nothing can be saved here'));
+        empty.appendChild(el('p', null, 'Allow site data in this browser, then reload.'));
+      } else if (!state.opportunities.length) {
+        empty.appendChild(el('strong', null, 'No opportunities yet'));
+        empty.appendChild(el('p', null, 'Add one as soon as a vendor calls \u2014 vendor, client and role is enough.'));
+      } else {
+        empty.appendChild(el('strong', null, 'Nothing matches'));
+        empty.appendChild(el('p', null, 'Clear the search or choose another filter.'));
+      }
+      list.appendChild(empty);
+      return;
+    }
+
+    var fragment = document.createDocumentFragment();
+    rows.forEach(function (opp) { fragment.appendChild(buildCard(opp)); });
+    list.appendChild(fragment);
+  }
+
+  /* =====================================================================
+     Lifecycle diagram
+     ===================================================================== */
+
+  var mermaidPromise = null;
+  var dynamicImport = null;
+  try {
+    dynamicImport = new Function('url', 'return import(url);');
+  } catch (err) {
+    dynamicImport = null; // Older engine without dynamic import; the fallback covers it.
+  }
+
+  function isDark() {
+    try {
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch (err) { return false; }
+  }
+
+  function getMermaid() {
+    if (mermaidPromise) return mermaidPromise;
+    if (!dynamicImport) return Promise.reject(new Error('Dynamic import is unavailable'));
+    mermaidPromise = dynamicImport('https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs')
+      .then(function (module) {
+        var mermaid = module && (module.default || module);
+        if (!mermaid || typeof mermaid.render !== 'function') throw new Error('Mermaid did not load');
+        mermaid.initialize({
+          startOnLoad: false,
+          securityLevel: 'strict',
+          theme: 'base',
+          flowchart: { htmlLabels: false, useMaxWidth: true, padding: 10 },
+          themeVariables: {
+            fontFamily: 'ui-sans-serif, -apple-system, Segoe UI, Roboto, sans-serif',
+            fontSize: '14px',
+            lineColor: isDark() ? '#3a3f48' : '#c6c8d0'
+          }
+        });
+        return mermaid;
+      }).catch(function (err) {
+        mermaidPromise = null; // Allow a retry on the next ticket open.
+        throw err;
+      });
+    return mermaidPromise;
+  }
+
+  /** Builds the stage list for an opportunity from its own interview events. */
+  function lifecycleStages(opp) {
+    var stages = [{ name: 'Opportunity', state: 'done' }];
+    var next = nextInterview(opp);
+    var currentTaken = false;
+
+    sortedInterviews(opp).forEach(function (iv) {
+      var stage = 'pending';
+      if (iv.status === 'Completed') stage = 'done';
+      else if (iv.status === 'Cancelled' || iv.status === 'No Show') stage = 'dropped';
+      else if (next && iv.id === next.id) { stage = 'current'; currentTaken = true; }
+      stages.push({ name: iv.round, state: stage, detail: iv.date ? fmtShort(iv.date) : 'Not scheduled' });
+    });
+
+    if (!currentTaken) {
+      for (var i = 1; i < stages.length; i++) {
+        if (stages[i].state === 'pending') { stages[i].state = 'current'; break; }
+      }
+    }
+
+    if (opp.status === 'Offer') stages.push({ name: 'Offer', state: 'done' });
+    else if (opp.status === 'Rejected') stages.push({ name: 'Rejected', state: 'dropped' });
+    else if (opp.status === 'Withdrawn') stages.push({ name: 'Withdrawn', state: 'dropped' });
+    else if (opp.status === 'Closed') stages.push({ name: 'Closed', state: 'dropped' });
+    else stages.push({ name: 'Offer', state: 'pending' });
+
+    return stages;
+  }
+
+  var MARKS = { done: '\u2713', current: '\u25cf', dropped: '\u2715', pending: '\u25cb' };
+
+  function renderFallbackLifecycle(container, stages) {
+    clear(container);
+    var list = el('ul', 'flow');
+    stages.forEach(function (stage) {
+      var item = el('li', stage.state);
+      item.appendChild(el('span', 'mark', MARKS[stage.state] || '\u25cb'));
+      var name = el('span', 'name', stage.name);
+      item.appendChild(name);
+      if (stage.detail) {
+        var detail = el('span', 'name', stage.detail);
+        detail.style.marginLeft = 'auto';
+        detail.style.color = 'var(--muted)';
+        detail.style.fontSize = '12.5px';
+        item.appendChild(detail);
+      }
+      list.appendChild(item);
+    });
+    container.appendChild(list);
+  }
+
+  function mermaidLabel(value) {
+    return String(value).replace(/["`<>\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 40) || 'Stage';
+  }
+
+  function mermaidSource(stages) {
+    var dark = isDark();
+    var lines = ['flowchart TD'];
+    stages.forEach(function (stage, index) {
+      lines.push('  n' + index + '["' + mermaidLabel(stage.name) + '"]:::' + stage.state);
+      if (index > 0) lines.push('  n' + (index - 1) + ' --> n' + index);
+    });
+    lines.push('  classDef done fill:' + (dark ? '#12291f' : '#e9f7f0') +
+               ',stroke:' + (dark ? '#2f5a45' : '#bfe5d3') + ',color:' + (dark ? '#8fe0b8' : '#146241') + ',stroke-width:1px');
+    lines.push('  classDef current fill:' + (dark ? '#1c2036' : '#eceffc') +
+               ',stroke:' + (dark ? '#4a54a0' : '#b9c4f2') + ',color:' + (dark ? '#c3ccff' : '#2f4bb8') + ',stroke-width:2px');
+    lines.push('  classDef pending fill:' + (dark ? '#1b1e24' : '#f4f4f6') +
+               ',stroke:' + (dark ? '#343a44' : '#dcdde3') + ',color:' + (dark ? '#9aa0ab' : '#6d7380') + ',stroke-width:1px');
+    lines.push('  classDef dropped fill:' + (dark ? '#2c1717' : '#fdeeed') +
+               ',stroke:' + (dark ? '#5d3230' : '#f2cfcc') + ',color:' + (dark ? '#f0a49d' : '#a3211a') + ',stroke-width:1px');
+    return lines.join('\n');
+  }
+
+  function renderLifecycle(opp) {
+    var container = $('t-lifecycle');
+    var stages = lifecycleStages(opp);
+    renderFallbackLifecycle(container, stages);
+
+    var token = uid('lc');
+    container.dataset.token = token;
+
+    getMermaid().then(function (mermaid) {
+      return mermaid.render('lifecycle_' + token.replace(/[^a-z0-9_]/gi, ''), mermaidSource(stages));
+    }).then(function (result) {
+      if (container.dataset.token !== token) return; // A different ticket opened meanwhile.
+      var svg = result && result.svg;
+      if (!svg) return;
+      container.innerHTML = svg;
+    }).catch(function (err) {
+      console.info('Showing the built-in lifecycle view.', err && err.message);
+    });
+  }
+
+  /* =====================================================================
+     Ticket
+     ===================================================================== */
+
+  function detailRow(list, label, value) {
+    if (!value) return;
+    list.appendChild(el('dt', null, label));
+    list.appendChild(el('dd', null, value));
+  }
+
+  function renderNextBox(opp) {
+    var box = $('t-next');
+    clear(box);
+    var next = nextInterview(opp);
+
+    if (!next) {
+      box.appendChild(el('p', 'none', 'No upcoming interview scheduled.'));
+      var schedule = el('button', 'btn btn-primary', '+ Schedule interview');
+      schedule.type = 'button';
+      schedule.style.marginTop = '12px';
+      schedule.addEventListener('click', function () { openInterviewSheet(opp.id, null); });
+      box.appendChild(schedule);
+      return;
+    }
+
+    box.appendChild(el('div', 'next-round', next.round));
+    var relative = relativeDay(next.date);
+    box.appendChild(el('div', 'next-when',
+      (relative ? relative + ' \u00b7 ' : '') + fmtLong(next.date) +
+      (next.time ? ' \u00b7 ' + fmtTime(next.time) : '')));
+    var modeLine = [next.mode, next.location, next.interviewer ? 'With ' + next.interviewer : '']
+      .filter(Boolean).join(' \u00b7 ');
+    if (modeLine) box.appendChild(el('div', 'next-mode', modeLine));
+
+    var actions = el('div', 'row-actions');
+    if (next.meetingLink && /^https?:\/\//i.test(next.meetingLink)) {
+      var join = el('a', 'btn btn-primary', 'Join meeting');
+      join.href = next.meetingLink;
+      join.target = '_blank';
+      join.rel = 'noopener noreferrer';
+      actions.appendChild(join);
+    }
+    var edit = el('button', 'btn btn-outline', 'Edit interview');
+    edit.type = 'button';
+    edit.addEventListener('click', function () { openInterviewSheet(opp.id, next.id); });
+    actions.appendChild(edit);
+
+    if (next.status !== 'Completed') {
+      var done = el('button', 'btn btn-outline', 'Mark completed');
+      done.type = 'button';
+      done.addEventListener('click', function () { markCompleted(opp.id, next.id); });
+      actions.appendChild(done);
+    }
+    box.appendChild(actions);
+  }
+
+  function renderInterviewHistory(opp) {
+    var container = $('t-interviews');
+    clear(container);
+    var rows = sortedInterviews(opp);
+
+    if (!rows.length) {
+      container.appendChild(el('p', 'none', 'No interview rounds recorded yet.'));
+      return;
+    }
+
+    var next = nextInterview(opp);
+
+    rows.forEach(function (iv) {
+      var button = el('button', 'iv');
+      button.type = 'button';
+
+      var top = el('div', 'iv-top');
+      var mark = iv.status === 'Completed' ? '\u2713 ' :
+                 (next && iv.id === next.id) ? '\u25cf ' :
+                 (iv.status === 'Cancelled' || iv.status === 'No Show') ? '\u2715 ' : '\u25cb ';
+      top.appendChild(el('div', 'iv-round', mark + iv.round));
+      top.appendChild(badge(iv.status, iv.status));
+      button.appendChild(top);
+
+      var when = iv.date
+        ? fmtShort(iv.date) + (iv.time ? ' \u00b7 ' + fmtTime(iv.time) : '')
+        : 'Not scheduled';
+      if (iv.mode) when += ' \u00b7 ' + iv.mode;
+      if (iv.interviewer) when += ' \u00b7 ' + iv.interviewer;
+      button.appendChild(el('div', 'iv-when', when));
+
+      if (iv.notes) button.appendChild(el('div', 'iv-notes', iv.notes));
+
+      if (iv.result || iv.feedback || iv.questions) {
+        var box = el('div', 'iv-fb');
+        if (iv.result) {
+          box.appendChild(el('b', null, 'RESULT'));
+          box.appendChild(document.createTextNode(iv.result));
+        }
+        if (iv.questions) {
+          box.appendChild(el('b', null, 'QUESTIONS ASKED'));
+          box.appendChild(document.createTextNode(iv.questions));
+        }
+        if (iv.feedback) {
+          box.appendChild(el('b', null, 'FEEDBACK'));
+          box.appendChild(document.createTextNode(iv.feedback));
+        }
+        button.appendChild(box);
+      }
+
+      button.addEventListener('click', function () { openInterviewSheet(opp.id, iv.id); });
+      container.appendChild(button);
+    });
+  }
+
+  function renderContact(opp) {
+    var row = $('t-contact');
+    clear(row);
+
+    if (opp.recruiterPhone) {
+      var call = el('a', 'btn btn-outline', 'Call');
+      call.href = 'tel:' + opp.recruiterPhone.replace(/[^\d+]/g, '');
+      row.appendChild(call);
+
+      var digits = opp.recruiterPhone.replace(/[^\d]/g, '');
+      if (digits.length >= 10) {
+        var whatsapp = el('a', 'btn btn-outline', 'WhatsApp');
+        whatsapp.href = 'https://wa.me/' + (digits.length === 10 ? '91' + digits : digits);
+        whatsapp.target = '_blank';
+        whatsapp.rel = 'noopener noreferrer';
+        row.appendChild(whatsapp);
+      }
+    }
+
+    if (opp.recruiterEmail) {
+      var mail = el('a', 'btn btn-outline', 'Email');
+      mail.href = 'mailto:' + opp.recruiterEmail;
+      row.appendChild(mail);
+    }
+  }
+
+  function renderActivity(opp) {
+    var list = $('t-activity');
+    clear(list);
+    var rows = opp.activity.slice().sort(function (a, b) {
+      return a.timestamp < b.timestamp ? 1 : -1;
+    });
+    if (!rows.length) {
+      list.appendChild(el('li', 'none', 'Nothing recorded yet.'));
+      return;
+    }
+    rows.forEach(function (entry) {
+      var item = el('li');
+      item.appendChild(el('div', 'when', fmtStamp(entry.timestamp)));
+      item.appendChild(el('div', 'what', entry.text));
+      list.appendChild(item);
+    });
+  }
+
+  function renderTicket() {
+    var opp = findOpp(state.ticketId);
+    if (!opp) { closeTicket(); return; }
+
+    $('t-vendor').textContent = opp.vendor || opp.client || 'Untitled opportunity';
+
+    var clientLine = $('t-client');
+    clear(clientLine);
+    if (opp.vendor && opp.client) {
+      clientLine.appendChild(document.createTextNode('Client: '));
+      clientLine.appendChild(el('b', null, opp.client));
+      clientLine.hidden = false;
+    } else {
+      clientLine.hidden = true;
+    }
+
+    var roleLine = $('t-role');
+    roleLine.textContent = opp.role || '';
+    roleLine.hidden = !opp.role;
+
+    var badges = $('t-badges');
+    clear(badges);
+    badges.appendChild(badge(opp.status, opp.status));
+    var stage = opp.currentStage || (nextInterview(opp) ? nextInterview(opp).round : '');
+    if (stage) badges.appendChild(badge('Stage: ' + stage, 'plainstage', true));
+    var stats = progress(opp);
+    if (stats.total) badges.appendChild(badge(stats.done + '/' + stats.total + ' rounds done', 'plainstage', true));
+
+    renderNextBox(opp);
+    renderLifecycle(opp);
+    renderInterviewHistory(opp);
+
+    var details = $('t-details');
+    clear(details);
+    detailRow(details, 'Vendor', opp.vendor);
+    detailRow(details, 'Client', opp.client);
+    detailRow(details, 'Role', opp.role);
+    detailRow(details, 'Location', opp.location);
+    detailRow(details, 'Source', opp.source);
+    detailRow(details, 'Employment', opp.employmentType);
+    detailRow(details, 'Job ID', opp.jobId);
+    detailRow(details, 'Recruiter', opp.recruiterName);
+    detailRow(details, 'Phone', opp.recruiterPhone);
+    detailRow(details, 'Email', opp.recruiterEmail);
+    detailRow(details, 'Current CTC', opp.currentCTC);
+    detailRow(details, 'Expected CTC', opp.expectedCTC);
+    detailRow(details, 'Offered CTC', opp.offeredCTC);
+    detailRow(details, 'Added', fmtStamp(opp.createdAt));
+
+    renderContact(opp);
+
+    var notes = $('t-notes');
+    notes.textContent = opp.notes || 'No notes yet.';
+    notes.style.color = opp.notes ? '' : 'var(--muted)';
+
+    renderActivity(opp);
+  }
+
+  function openTicket(id) {
+    var opp = findOpp(id);
+    if (!opp) return;
+    state.ticketId = opp.id;
+    renderTicket();
+    $('ticket').hidden = false;
+    $('ticket').scrollTop = 0;
+    document.body.classList.add('locked');
+    $('fab').hidden = true;
+  }
+
+  function closeTicket() {
+    state.ticketId = null;
+    $('ticket').hidden = true;
+    document.body.classList.remove('locked');
+    $('fab').hidden = false;
+    $('t-lifecycle').dataset.token = '';
+  }
+
+  /* =====================================================================
+     View switching
+     ===================================================================== */
+
+  function renderAll() {
+    renderCalendar();
+    renderOpportunities();
+    if (state.ticketId !== null) renderTicket();
+  }
+
+  function setView(view) {
+    state.view = view;
+    $('view-calendar').hidden = view !== 'calendar';
+    $('view-opportunities').hidden = view !== 'opportunities';
+    Array.prototype.forEach.call($('viewnav').querySelectorAll('button'), function (button) {
+      if (button.dataset.view === view) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    });
+    window.scrollTo(0, 0);
+  }
+
+  /* =====================================================================
+     Sheets
+     ===================================================================== */
+
+  function openSheet(sheetId) {
+    lastFocused = document.activeElement;
+    $(sheetId).classList.add('open');
+    $('backdrop').classList.add('open');
+    document.body.classList.add('locked');
+  }
+
+  function closeSheet(sheetId) {
+    $(sheetId).classList.remove('open');
+    $('backdrop').classList.remove('open');
+    if (state.ticketId === null) document.body.classList.remove('locked');
+    if (lastFocused && typeof lastFocused.focus === 'function') {
+      try { lastFocused.focus(); } catch (err) { /* ignore */ }
+    }
+    lastFocused = null;
+  }
+
+  function anySheetOpen() {
+    return $('opp-sheet').classList.contains('open') || $('iv-sheet').classList.contains('open');
+  }
+
+  function fieldError(wrapId, errId, show) {
+    $(wrapId).classList.toggle('bad', !!show);
+    $(errId).hidden = !show;
+  }
+
+  /* ---------------- Opportunity sheet ---------------- */
+
+  function fillSelect(select, values, blankLabel) {
+    clear(select);
+    if (blankLabel) select.appendChild(new Option(blankLabel, ''));
+    values.forEach(function (value) { select.appendChild(new Option(value, value)); });
+  }
+
+  function setMoreOpen(open) {
+    $('opp-more').hidden = !open;
+    $('opp-more-toggle').textContent = open ? 'Hide extra details' : 'Add more details';
+  }
+
+  function openOppSheet(id) {
+    oppEditingId = id === undefined || id === null ? null : id;
+    var opp = oppEditingId !== null ? findOpp(oppEditingId) : null;
+
+    $('opp-sheet-title').textContent = opp ? 'Edit opportunity' : 'Add opportunity';
+    $('opp-save').textContent = opp ? 'Save changes' : 'Create opportunity';
+
+    $('o-vendor').value = opp ? opp.vendor : '';
+    $('o-client').value = opp ? opp.client : '';
+    $('o-role').value = opp ? opp.role : '';
+    $('o-location').value = opp ? (LOCATIONS.indexOf(opp.location) > -1 ? opp.location : (opp.location ? 'Other' : DEFAULT_LOCATION)) : DEFAULT_LOCATION;
+    $('o-source').value = opp ? opp.source : '';
+    $('o-status').value = opp ? opp.status : 'In Progress';
+    $('o-stage').value = opp ? opp.currentStage : '';
+    $('o-rname').value = opp ? opp.recruiterName : '';
+    $('o-rphone').value = opp ? opp.recruiterPhone : '';
+    $('o-remail').value = opp ? opp.recruiterEmail : '';
+    $('o-jobid').value = opp ? opp.jobId : '';
+    $('o-employment').value = opp ? opp.employmentType : '';
+    $('o-cctc').value = opp ? opp.currentCTC : '';
+    $('o-ectc').value = opp ? opp.expectedCTC : '';
+    $('o-octc').value = opp ? opp.offeredCTC : '';
+    $('o-notes').value = opp ? opp.notes : '';
+
+    fieldError('wrap-vendor', 'err-vendor', false);
+    fieldError('wrap-client', 'err-client', false);
+    fieldError('wrap-role', 'err-role', false);
+
+    // Progressive disclosure: a new opportunity only needs the three names.
+    setMoreOpen(!!opp);
+    $('opp-save').disabled = false;
+
+    openSheet('opp-sheet');
+    if (!opp) setTimeout(function () { $('o-vendor').focus(); }, 80);
+  }
+
+  function submitOpportunity(event) {
+    event.preventDefault();
+
+    var vendor = $('o-vendor').value.trim();
+    var client = $('o-client').value.trim();
+    var role = $('o-role').value.trim();
+
+    fieldError('wrap-vendor', 'err-vendor', !vendor);
+    fieldError('wrap-client', 'err-client', !client);
+    fieldError('wrap-role', 'err-role', !role);
+
+    if (!vendor) { $('o-vendor').focus(); return; }
+    if (!client) { $('o-client').focus(); return; }
+    if (!role) { $('o-role').focus(); return; }
+
+    if (!db) { showToast('Storage is unavailable, so this cannot be saved.'); return; }
+
+    var patch = {
+      vendor: vendor,
+      client: client,
+      role: role,
+      location: $('o-location').value,
+      source: $('o-source').value.trim(),
+      status: $('o-status').value,
+      currentStage: $('o-stage').value.trim(),
+      recruiterName: $('o-rname').value.trim(),
+      recruiterPhone: $('o-rphone').value.trim(),
+      recruiterEmail: $('o-remail').value.trim(),
+      jobId: $('o-jobid').value.trim(),
+      employmentType: $('o-employment').value,
+      currentCTC: $('o-cctc').value.trim(),
+      expectedCTC: $('o-ectc').value.trim(),
+      offeredCTC: $('o-octc').value.trim(),
+      notes: $('o-notes').value.trim()
+    };
+
+    $('opp-save').disabled = true;
+    var existing = oppEditingId !== null ? findOpp(oppEditingId) : null;
+
+    if (existing) {
+      var statusChanged = existing.status !== patch.status;
+      var oldStatus = existing.status;
+      Object.keys(patch).forEach(function (key) { existing[key] = patch[key]; });
+      if (statusChanged) addActivity(existing, 'status', 'Status changed from ' + oldStatus + ' to ' + patch.status);
+      else addActivity(existing, 'edit', 'Opportunity details updated');
+
+      persist(existing, 'Changes saved').then(function () {
+        closeSheet('opp-sheet');
+        $('opp-save').disabled = false;
+      });
+      return;
+    }
+
+    var now = new Date().toISOString();
+    var record = normalizeOpportunity(Object.assign({}, patch, {
+      createdAt: now,
+      updatedAt: now,
+      interviews: [],
+      activity: [{ id: uid('ac'), timestamp: now, type: 'created', text: 'Opportunity created' }]
+    }));
+    delete record.id;
+
+    dbAdd(record).then(function (newId) {
+      record.id = newId;
+      state.opportunities.push(record);
+      closeSheet('opp-sheet');
+      renderAll();
+      showToast('Opportunity created');
+      openTicket(newId);
+    }).catch(function (err) {
+      console.error('Creating the opportunity failed.', err);
+      showToast(describeError(err) || 'That could not be saved. Try again.');
+    }).then(function () {
+      $('opp-save').disabled = false;
+    });
+  }
+
+  function deleteOpportunity() {
+    var opp = findOpp(state.ticketId);
+    if (!opp) return;
+    var label = partyLine(opp);
+    if (!window.confirm('Delete ' + label + ' and all of its interview rounds? This cannot be undone.')) return;
+
+    var id = opp.id;
+    dbRemove(id).then(function () {
+      state.opportunities = state.opportunities.filter(function (item) { return item.id !== id; });
+      closeTicket();
+      renderAll();
+      showToast('Opportunity deleted');
+    }).catch(function (err) {
+      console.error('Deleting failed.', err);
+      showToast(describeError(err) || 'That could not be deleted. Try again.');
+    });
+  }
+
+  /* ---------------- Interview sheet ---------------- */
+
+  function syncInterviewFields() {
+    var mode = $('i-mode').value;
+    $('wrap-link').hidden = mode !== 'Virtual';
+    $('wrap-ivlocation').hidden = mode !== 'In-person';
+    $('wrap-roundother').hidden = $('i-round').value !== 'Other';
+    var status = $('i-status').value;
+    $('iv-outcome').hidden = !(status === 'Completed' || status === 'No Show' || status === 'Cancelled');
+  }
+
+  function openInterviewSheet(oppId, ivId) {
+    var opp = findOpp(oppId);
+    if (!opp) return;
+    var iv = null;
+    opp.interviews.forEach(function (item) { if (item.id === ivId) iv = item; });
+
+    ivEditing = { oppId: opp.id, ivId: iv ? iv.id : null };
+    $('iv-sheet-title').textContent = iv ? 'Edit interview' : 'Schedule interview';
+    $('iv-delete').hidden = !iv;
+
+    var known = iv && ROUNDS.indexOf(iv.round) > -1;
+    $('i-round').value = iv ? (known ? iv.round : 'Other') : 'HR Screening';
+    $('i-roundother').value = iv && !known ? iv.round : '';
+    $('i-date').value = iv ? iv.date : '';
+    $('i-time').value = iv ? iv.time : '';
+    $('i-mode').value = iv ? (iv.mode || 'Virtual') : 'Virtual';
+    $('i-status').value = iv ? iv.status : 'Scheduled';
+    $('i-link').value = iv ? iv.meetingLink : '';
+    $('i-location').value = iv ? iv.location : '';
+    $('i-interviewer').value = iv ? iv.interviewer : '';
+    $('i-notes').value = iv ? iv.notes : '';
+    $('i-result').value = iv ? iv.result : '';
+    $('i-questions').value = iv ? iv.questions : '';
+    $('i-feedback').value = iv ? iv.feedback : '';
+
+    fieldError('wrap-round', 'err-round', false);
+    syncInterviewFields();
+    $('iv-save').disabled = false;
+
+    openSheet('iv-sheet');
+  }
+
+  function submitInterview(event) {
+    event.preventDefault();
+
+    var opp = findOpp(ivEditing.oppId);
+    if (!opp) { closeSheet('iv-sheet'); return; }
+
+    var round = $('i-round').value;
+    if (round === 'Other') round = $('i-roundother').value.trim() || 'Other';
+    if (!round) { fieldError('wrap-round', 'err-round', true); return; }
+    fieldError('wrap-round', 'err-round', false);
+
+    var now = new Date().toISOString();
+    var mode = $('i-mode').value;
+    var patch = {
+      round: round,
+      date: isDateStr($('i-date').value) ? $('i-date').value : '',
+      time: isTimeStr($('i-time').value) ? $('i-time').value : '',
+      mode: mode,
+      meetingLink: mode === 'Virtual' ? $('i-link').value.trim() : '',
+      location: mode === 'In-person' ? $('i-location').value.trim() : '',
+      interviewer: $('i-interviewer').value.trim(),
+      status: $('i-status').value,
+      result: $('i-result').value,
+      questions: $('i-questions').value.trim(),
+      feedback: $('i-feedback').value.trim(),
+      notes: $('i-notes').value.trim(),
+      updatedAt: now
+    };
+
+    $('iv-save').disabled = true;
+
+    var existing = null;
+    opp.interviews.forEach(function (item) { if (item.id === ivEditing.ivId) existing = item; });
+
+    if (existing) {
+      var wasStatus = existing.status;
+      Object.keys(patch).forEach(function (key) { existing[key] = patch[key]; });
+      if (wasStatus !== patch.status) {
+        addActivity(opp, 'interview', round + ' marked ' + patch.status.toLowerCase());
+      } else {
+        addActivity(opp, 'interview', round + ' updated');
+      }
+    } else {
+      var created = normalizeInterview(Object.assign({}, patch, { id: uid('iv'), createdAt: now }));
+      opp.interviews.push(created);
+      addActivity(opp, 'interview', round + ' scheduled' +
+        (patch.date ? ' for ' + fmtShort(patch.date) + (patch.time ? ' at ' + fmtTime(patch.time) : '') : ''));
+    }
+
+    // Keep the opportunity's current stage in step with the live round.
+    var upcoming = nextInterview(opp);
+    if (upcoming) opp.currentStage = upcoming.round;
+    else if (patch.status === 'Completed') opp.currentStage = round;
+
+    persist(opp, existing ? 'Interview updated' : 'Interview scheduled').then(function () {
+      closeSheet('iv-sheet');
+      $('iv-save').disabled = false;
+      if (patch.date) {
+        state.selectedDate = patch.date;
+        state.calendarMonth = new Date(parseKey(patch.date).getFullYear(), parseKey(patch.date).getMonth(), 1);
+        renderCalendar();
+      }
+    });
+  }
+
+  function deleteInterview() {
+    var opp = findOpp(ivEditing.oppId);
+    if (!opp || !ivEditing.ivId) return;
+    var target = null;
+    opp.interviews.forEach(function (item) { if (item.id === ivEditing.ivId) target = item; });
+    if (!target) return;
+    if (!window.confirm('Delete the ' + target.round + ' round? This cannot be undone.')) return;
+
+    opp.interviews = opp.interviews.filter(function (item) { return item.id !== target.id; });
+    addActivity(opp, 'interview', target.round + ' removed');
+    persist(opp, 'Interview deleted').then(function () { closeSheet('iv-sheet'); });
+  }
+
+  function markCompleted(oppId, ivId) {
+    var opp = findOpp(oppId);
+    if (!opp) return;
+    var target = null;
+    opp.interviews.forEach(function (item) { if (item.id === ivId) target = item; });
+    if (!target) return;
+
+    target.status = 'Completed';
+    target.updatedAt = new Date().toISOString();
+    addActivity(opp, 'interview', target.round + ' marked completed');
+    persist(opp, 'Marked completed').then(function () {
+      openInterviewSheet(oppId, ivId); // Straight into feedback while it is fresh.
+    });
+  }
+
+  /* =====================================================================
+     Export and import
+     ===================================================================== */
+
+  function exportData() {
+    if (!state.opportunities.length) { showToast('There is nothing to export yet.'); return; }
+
+    var payload = {
+      app: 'interview-tracker',
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      opportunities: state.opportunities.map(function (opp) { return stripId(opp); })
+    };
+
+    var url = null;
+    try {
+      var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = 'interview-tracker-' + todayKey() + '.json';
+      link.rel = 'noopener';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Backup downloaded');
+    } catch (err) {
+      console.error('Export failed.', err);
+      showToast('The backup could not be created.');
+    } finally {
+      if (url) setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    }
+  }
+
+  function readFileAsText(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(String(reader.result)); };
+      reader.onerror = function () { reject(reader.error || new Error('The file could not be read')); };
+      try { reader.readAsText(file); } catch (err) { reject(err); }
+    });
+  }
+
+  /** Accepts both the current export shape and the older interview-list shape. */
+  function extractRecords(parsed) {
+    var list = null;
+    if (Array.isArray(parsed)) list = parsed;
+    else if (parsed && typeof parsed === 'object') {
+      if (Array.isArray(parsed.opportunities)) list = parsed.opportunities;
+      else if (Array.isArray(parsed.entries)) list = parsed.entries;
+    }
+    if (!list) return null;
+
+    return list.map(normalizeOpportunity).filter(function (opp) {
+      return opp && (opp.vendor || opp.client || opp.role);
+    }).map(stripId);
+  }
+
+  function importFromFile(file) {
+    if (!db) {
+      window.alert('Storage is unavailable in this browser, so a backup cannot be imported.');
+      return Promise.resolve();
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      window.alert('That file is too large to be an interview backup.');
+      return Promise.resolve();
+    }
+
+    return readFileAsText(file).then(function (raw) {
+      var parsed;
+      try { parsed = JSON.parse(raw); } catch (err) { throw new Error('unreadable'); }
+
+      var records = extractRecords(parsed);
+      if (!records) throw new Error('shape');
+      if (!records.length) {
+        window.alert('No opportunities were found in that file.');
+        return null;
+      }
+
+      var isOld = !Array.isArray(parsed.opportunities);
+      var message = 'Replace everything in this browser with ' + records.length + ' ' +
+        (records.length === 1 ? 'opportunity' : 'opportunities') + ' from this file?';
+      if (isOld) message += '\n\nThis looks like an older backup. It will be converted on import.';
+
+      if (!window.confirm(message)) return null;
+
+      return dbReplaceAll(records).then(function (ids) {
+        state.opportunities = records.map(function (record, index) {
+          return Object.assign({}, record, { id: ids[index] });
+        }).filter(function (record) { return record.id !== undefined; });
+        state.search = '';
+        $('search').value = '';
+        state.filter = 'all';
+        closeTicket();
+        renderAll();
+        showToast('Imported ' + state.opportunities.length + ' ' +
+          (state.opportunities.length === 1 ? 'opportunity' : 'opportunities'));
+        return null;
+      });
+    }).catch(function (err) {
+      if (err && err.message === 'unreadable') {
+        window.alert('That file is not valid JSON. Pick a backup exported from this app.');
+      } else if (err && err.message === 'shape') {
+        window.alert('That file does not look like an interview backup.');
+      } else {
+        console.error('Import failed.', err);
+        showToast(describeError(err) || 'The import failed. Nothing was changed.');
+        return loadAll();
+      }
+    });
+  }
+
+  /* =====================================================================
+     Events
+     ===================================================================== */
+
+  function trapFocus(event) {
+    if (event.key !== 'Tab' || !anySheetOpen()) return;
+    var sheet = $('opp-sheet').classList.contains('open') ? $('opp-sheet') : $('iv-sheet');
+    var items = Array.prototype.filter.call(
+      sheet.querySelectorAll('button:not([hidden]):not([disabled]), input, select, textarea, a[href]'),
+      function (node) {
+        return node.offsetParent !== null || node === document.activeElement;
+      }
+    );
+    if (!items.length) return;
+    var first = items[0];
+    var last = items[items.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  }
+
+  function bindEvents() {
+    fillSelect($('o-status'), OPP_STATUSES);
+    fillSelect($('i-status'), IV_STATUSES);
+    fillSelect($('i-round'), ROUNDS);
+    $('f-vendor').dataset.key = 'vendor';
+    $('f-client').dataset.key = 'client';
+    $('f-round').dataset.key = 'round';
+    $('f-mode').dataset.key = 'mode';
+
+    $('viewnav').addEventListener('click', function (event) {
+      var button = event.target.closest ? event.target.closest('button[data-view]') : null;
+      if (button) setView(button.dataset.view);
+    });
+
+    $('fab').addEventListener('click', function () { openOppSheet(null); });
+
+    // Calendar
+    $('cal-prev').addEventListener('click', function () {
+      var c = state.calendarMonth;
+      state.calendarMonth = new Date(c.getFullYear(), c.getMonth() - 1, 1);
+      renderCalendar();
+    });
+    $('cal-next').addEventListener('click', function () {
+      var c = state.calendarMonth;
+      state.calendarMonth = new Date(c.getFullYear(), c.getMonth() + 1, 1);
+      renderCalendar();
+    });
+    $('cal-today').addEventListener('click', function () {
+      state.calendarMonth = monthStart(new Date());
+      state.selectedDate = todayKey();
+      renderCalendar();
+    });
+    $('cal-grid').addEventListener('click', function (event) {
+      var cell = event.target.closest ? event.target.closest('.cal-day') : null;
+      if (!cell) return;
+      state.selectedDate = cell.dataset.date;
+      var picked = parseKey(cell.dataset.date);
+      if (picked.getMonth() !== state.calendarMonth.getMonth() ||
+          picked.getFullYear() !== state.calendarMonth.getFullYear()) {
+        state.calendarMonth = new Date(picked.getFullYear(), picked.getMonth(), 1);
+      }
+      renderCalendar();
+    });
+
+    // Opportunities
+    $('search').addEventListener('input', function () {
+      state.search = $('search').value;
+      renderOpportunities();
+    });
+    $('search').addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') { event.preventDefault(); $('search').blur(); }
+    });
+    $('sort').addEventListener('change', function () {
+      state.sort = $('sort').value;
+      renderOpportunities();
+    });
+    $('refine-toggle').addEventListener('click', function () {
+      var open = $('refine').classList.toggle('open');
+      $('refine-toggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    ['f-vendor', 'f-client', 'f-round', 'f-mode'].forEach(function (id) {
+      $(id).addEventListener('change', function () {
+        state.refine[$(id).dataset.key] = $(id).value;
+        renderOpportunities();
+      });
+    });
+    $('chips').addEventListener('click', function (event) {
+      var chip = event.target.closest ? event.target.closest('.chip') : null;
+      if (!chip) return;
+      state.filter = chip.dataset.filter;
+      renderOpportunities();
+    });
+    $('opp-list').addEventListener('click', function (event) {
+      var card = event.target.closest ? event.target.closest('.opp') : null;
+      if (card) openTicket(card.dataset.opp);
+    });
+
+    // Ticket
+    $('ticket-back').addEventListener('click', closeTicket);
+    $('ticket-edit').addEventListener('click', function () { openOppSheet(state.ticketId); });
+    $('ticket-delete').addEventListener('click', deleteOpportunity);
+    $('add-interview').addEventListener('click', function () { openInterviewSheet(state.ticketId, null); });
+    $('activity-add').addEventListener('click', function () {
+      var input = $('activity-input');
+      var body = input.value.trim();
+      if (!body) return;
+      var opp = findOpp(state.ticketId);
+      if (!opp) return;
+      addActivity(opp, 'note', body);
+      input.value = '';
+      persist(opp);
+    });
+    $('activity-input').addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') { event.preventDefault(); $('activity-add').click(); }
+    });
+
+    // Sheets
+    $('opp-form').addEventListener('submit', submitOpportunity);
+    $('opp-close').addEventListener('click', function () { closeSheet('opp-sheet'); });
+    $('opp-cancel').addEventListener('click', function () { closeSheet('opp-sheet'); });
+    $('opp-more-toggle').addEventListener('click', function () { setMoreOpen($('opp-more').hidden); });
+
+    $('iv-form').addEventListener('submit', submitInterview);
+    $('iv-close').addEventListener('click', function () { closeSheet('iv-sheet'); });
+    $('iv-cancel').addEventListener('click', function () { closeSheet('iv-sheet'); });
+    $('iv-delete').addEventListener('click', deleteInterview);
+    $('i-mode').addEventListener('change', syncInterviewFields);
+    $('i-round').addEventListener('change', syncInterviewFields);
+    $('i-status').addEventListener('change', syncInterviewFields);
+
+    $('backdrop').addEventListener('click', function () {
+      if ($('opp-sheet').classList.contains('open')) closeSheet('opp-sheet');
+      if ($('iv-sheet').classList.contains('open')) closeSheet('iv-sheet');
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        if ($('iv-sheet').classList.contains('open')) { closeSheet('iv-sheet'); return; }
+        if ($('opp-sheet').classList.contains('open')) { closeSheet('opp-sheet'); return; }
+        if (state.ticketId !== null) { closeTicket(); return; }
+      }
+      trapFocus(event);
+    });
+
+    // Export / import
+    $('export-btn').addEventListener('click', exportData);
+    $('import-btn').addEventListener('click', function () { $('import-file').click(); });
+    $('import-file').addEventListener('change', function (event) {
+      var file = event.target.files && event.target.files[0];
+      event.target.value = '';
+      if (file) importFromFile(file);
+    });
+
+    ['o-vendor', 'o-client', 'o-role'].forEach(function (id) {
+      $(id).addEventListener('input', function () {
+        if ($(id).value.trim()) {
+          fieldError('wrap-' + id.slice(2), 'err-' + id.slice(2), false);
+        }
+      });
+    });
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible' && db && !anySheetOpen() && state.ticketId === null) {
+        loadAll();
+      }
+    });
+  }
+
+  /* =====================================================================
+     Init
+     ===================================================================== */
+
+  function requestPersistence() {
+    try {
+      if (navigator.storage && navigator.storage.persist) {
+        navigator.storage.persisted().then(function (already) {
+          if (!already) return navigator.storage.persist();
+        }).catch(function () { /* best effort */ });
+      }
+    } catch (err) { /* best effort */ }
+  }
+
+  function init() {
+    state.calendarMonth = monthStart(new Date());
+    state.selectedDate = todayKey();
+
+    try { bindEvents(); } catch (err) { console.error('Wiring up the interface failed.', err); }
+
+    setView('calendar');
+    requestPersistence();
+
+    setupDB().then(function (result) {
+      if (result === 'unavailable') {
+        storageBlocked = true;
+        $('storage-banner').hidden = false;
+      } else if (result === 'rebuilt') {
+        showToast('The local database was rebuilt.');
+      }
+      return loadAll();
+    }).catch(function (err) {
+      console.error('Startup failed.', err);
+      storageBlocked = true;
+      $('storage-banner').hidden = false;
+      renderAll();
+    });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
